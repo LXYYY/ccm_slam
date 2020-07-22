@@ -33,9 +33,9 @@ if(${PERFORMANCE_MODE})
     set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
 endif()
 
-if(${ROS_VERSION_INDIGO})
-    set(CMAKE_CXX_FLAGS "-L${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build/lib/ -lopencv_nonfree ${CMAKE_CXX_FLAGS}")
-endif()
+#if(${ROS_VERSION_INDIGO})
+#set(CMAKE_CXX_FLAGS "-L${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build/lib/ -lopencv_nonfree ${CMAKE_CXX_FLAGS}")
+#endif()
 
 if(${DEBUG_MODE})
 set(CMAKE_CXX_FLAGS "-g ${CMAKE_CXX_FLAGS}")
@@ -60,32 +60,14 @@ MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} )
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 if(NOT ${ROS_VERSION_INDIGO})
-    find_package(OpenCV REQUIRED)
+  find_package(catkin REQUIRED COMPONENTS dbow2_catkin g2o_catkin pcl_catkin eigen_catkin opencv3_catkin roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
+else()
+  find_package(catkin REQUIRED COMPONENTS dbow2_catkin g2o_catkin pcl_catkin eigen_catkin opencv2_catkin roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
 endif()
 
-find_package(catkin REQUIRED COMPONENTS roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
 find_package(cmake_modules REQUIRED)
 
-if(NOT ${ROS_VERSION_INDIGO})
-find_package(Eigen3 REQUIRED 3.0)
-else()
-find_package(Eigen REQUIRED 3.0)
-endif()
-include_directories(${EIGEN_INCLUDE_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
-find_package(PCL 1.3 REQUIRED)
-
-if(${ROS_VERSION_INDIGO})
-    set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build)
-    set(OpenCV_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build/include)
-    find_package(OpenCV 2.4.13 REQUIRED)
-endif()
-
-set(THIRDPARTY_LIBS
-  ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o.so
-  ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib/libDBoW2.so
-  ${OpenCV_LIBS}
-)
 
 catkin_package(
    INCLUDE_DIRS include
@@ -97,15 +79,10 @@ include_directories(
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_SOURCE_DIR}/include
   ${catkin_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
-  ${Eigen_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
 )
 
 set(EXTERNAL_LIBRARIES
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-  ${EIGEN3_LIBS}
 )
 
 ADD_SUBDIRECTORY( include/cslam )
@@ -164,7 +141,7 @@ add_library(ccmslam_lib
 )
 
 add_dependencies(ccmslam_lib ccmslam_msgs_generate_messages_cpp)
-target_link_libraries(ccmslam_lib ${EXTERNAL_LIBRARIES} ${THIRDPARTY_LIBS})
+target_link_libraries(ccmslam_lib ${EXTERNAL_LIBRARIES})
 
 add_executable(ccmslamClientNode
 #node
