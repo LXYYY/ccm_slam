@@ -33,10 +33,6 @@ if(${PERFORMANCE_MODE})
     set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
 endif()
 
-if(${ROS_VERSION_INDIGO})
-    set(CMAKE_CXX_FLAGS "-L${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build/lib/ -lopencv_nonfree ${CMAKE_CXX_FLAGS}")
-endif()
-
 if(${DEBUG_MODE})
 set(CMAKE_CXX_FLAGS "-g ${CMAKE_CXX_FLAGS}")
 endif()
@@ -59,11 +55,9 @@ MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} )
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-if(NOT ${ROS_VERSION_INDIGO})
-    find_package(OpenCV REQUIRED)
-endif()
+find_package(OpenCV REQUIRED)
 
-find_package(catkin REQUIRED COMPONENTS roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
+find_package(catkin REQUIRED COMPONENTS g2o_catkin dbow2_catkin roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
 find_package(cmake_modules REQUIRED)
 
 if(NOT ${ROS_VERSION_INDIGO})
@@ -75,15 +69,7 @@ include_directories(${EIGEN_INCLUDE_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
 find_package(PCL 1.3 REQUIRED)
 
-if(${ROS_VERSION_INDIGO})
-    set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build)
-    set(OpenCV_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build/include)
-    find_package(OpenCV 2.4.13 REQUIRED)
-endif()
-
 set(THIRDPARTY_LIBS
-  ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o.so
-  ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib/libDBoW2.so
   ${OpenCV_LIBS}
 )
 
