@@ -202,7 +202,7 @@ public:
     double mdInsertStamp;
 
     //---IDs---
-    static long unsigned int nNextId;
+    static std::size_t nNextId;
     idpair mFrameId;
     idpair mId;
     size_t mUniqueId;

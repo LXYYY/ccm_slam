@@ -28,7 +28,7 @@
 
 namespace cslam {
 
-size_t KeyFrame::nNextId=0;
+std::size_t KeyFrame::nNextId=0;
 
 KeyFrame::KeyFrame(Frame &F, mapptr pMap, dbptr pKFDB, commptr pComm, eSystemState SysState, size_t UniqueId)
     : mFrameId(F.mId),mUniqueId(UniqueId),mTimeStamp(F.mTimeStamp),mVisId(-1),
