@@ -5,3 +5,4 @@ cslam/thirdparty/g2o/build/
 cslam/thirdparty/g2o/lib/
 *~
 *.user
+*.csv

@@ -64,7 +64,7 @@ if(NOT ${ROS_VERSION_INDIGO})
     find_package(OpenCV REQUIRED)
 endif()
 
-find_package(catkin REQUIRED COMPONENTS eigen_catkin dbow2_catkin g2o_catkin roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
+find_package(catkin REQUIRED COMPONENTS eigen_catkin roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
 find_package(cmake_modules REQUIRED)
 
 find_package(PCL 1.3 REQUIRED)
@@ -78,7 +78,7 @@ endif()
 set(THIRDPARTY_LIBS
   ${OpenCV_LIBS}
 )
-
+message(${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o.so)
 catkin_package(
    INCLUDE_DIRS include
    CATKIN_DEPENDS ccmslam_msgs
@@ -100,7 +100,7 @@ set(EXTERNAL_LIBRARIES
 
 ADD_SUBDIRECTORY( include/cslam )
 
-cs_add_library(ccmslam_lib
+add_library(ccmslam_lib
 #cpp files
   src/config.cpp
   src/CentralControl.cpp
@@ -154,9 +154,12 @@ cs_add_library(ccmslam_lib
 )
 
 add_dependencies(ccmslam_lib ccmslam_msgs_generate_messages_cpp)
-target_link_libraries(ccmslam_lib ${EXTERNAL_LIBRARIES} ${THIRDPARTY_LIBS})
+target_link_libraries(ccmslam_lib ${EXTERNAL_LIBRARIES} ${THIRDPARTY_LIBS}
+${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib/libDBoW2.so
+${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o.so
+)
 
-cs_add_executable(ccmslamClientNode
+add_executable(ccmslamClientNode
 #node
   src/client/ClientNode.cpp
 
@@ -169,7 +172,7 @@ cs_add_executable(ccmslamClientNode
 add_dependencies(ccmslamClientNode ccmslam_lib)
 target_link_libraries(ccmslamClientNode ${EXTERNAL_LIBRARIES} ccmslam_lib)
 
-cs_add_executable(ccmslamServerNode
+add_executable(ccmslamServerNode
 #node
   src/server/ServerNode.cpp
 
@@ -182,17 +185,15 @@ cs_add_executable(ccmslamServerNode
 add_dependencies(ccmslamServerNode ccmslam_lib)
 target_link_libraries(ccmslamServerNode ${EXTERNAL_LIBRARIES} ccmslam_lib)
 
-#install(TARGETS ccmslamClientNode ccmslamServerNode
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
+install(TARGETS ccmslamClientNode ccmslamServerNode
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
-#install(DIRECTORY
-#launch
-## myfile2
-#DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-#)
+install(DIRECTORY
+launch
+# myfile2
+DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
-cs_install()
-cs_export()
