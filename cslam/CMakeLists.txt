@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ccmslam)
-
+find_package(catkin_simple 0.1.0 REQUIRED)
+catkin_simple()
 set(PERFORMANCE_MODE TRUE)
 
 set(DEBUG_MODE 0)
@@ -63,7 +64,7 @@ if(NOT ${ROS_VERSION_INDIGO})
     find_package(OpenCV REQUIRED)
 endif()
 
-find_package(catkin REQUIRED COMPONENTS roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
+find_package(catkin REQUIRED COMPONENTS dbow2_catkin g2o_catkin roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
 find_package(cmake_modules REQUIRED)
 
 if(NOT ${ROS_VERSION_INDIGO})
@@ -82,8 +83,6 @@ if(${ROS_VERSION_INDIGO})
 endif()
 
 set(THIRDPARTY_LIBS
-  ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o.so
-  ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib/libDBoW2.so
   ${OpenCV_LIBS}
 )
 
@@ -110,7 +109,7 @@ set(EXTERNAL_LIBRARIES
 
 ADD_SUBDIRECTORY( include/cslam )
 
-add_library(ccmslam_lib
+cs_add_library(ccmslam_lib
 #cpp files
   src/config.cpp
   src/CentralControl.cpp
@@ -166,7 +165,7 @@ add_library(ccmslam_lib
 add_dependencies(ccmslam_lib ccmslam_msgs_generate_messages_cpp)
 target_link_libraries(ccmslam_lib ${EXTERNAL_LIBRARIES} ${THIRDPARTY_LIBS})
 
-add_executable(ccmslamClientNode
+cs_add_executable(ccmslamClientNode
 #node
   src/client/ClientNode.cpp
 
@@ -179,7 +178,7 @@ add_executable(ccmslamClientNode
 add_dependencies(ccmslamClientNode ccmslam_lib)
 target_link_libraries(ccmslamClientNode ${EXTERNAL_LIBRARIES} ccmslam_lib)
 
-add_executable(ccmslamServerNode
+cs_add_executable(ccmslamServerNode
 #node
   src/server/ServerNode.cpp
 
@@ -191,3 +190,18 @@ add_executable(ccmslamServerNode
 )
 add_dependencies(ccmslamServerNode ccmslam_lib)
 target_link_libraries(ccmslamServerNode ${EXTERNAL_LIBRARIES} ccmslam_lib)
+
+#install(TARGETS ccmslamClientNode ccmslamServerNode
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
+
+#install(DIRECTORY
+#launch
+## myfile2
+#DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+#)
+
+cs_install()
+cs_export()
