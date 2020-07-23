@@ -58,22 +58,13 @@ endif()
 
 MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} )
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
 if(NOT ${ROS_VERSION_INDIGO})
     find_package(OpenCV REQUIRED)
 endif()
 
-find_package(catkin REQUIRED COMPONENTS dbow2_catkin g2o_catkin roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
+find_package(catkin REQUIRED COMPONENTS eigen_catkin dbow2_catkin g2o_catkin roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
 find_package(cmake_modules REQUIRED)
 
-if(NOT ${ROS_VERSION_INDIGO})
-find_package(Eigen3 REQUIRED 3.0)
-else()
-find_package(Eigen REQUIRED 3.0)
-endif()
-include_directories(${EIGEN_INCLUDE_DIRS})
-add_definitions(${EIGEN_DEFINITIONS})
 find_package(PCL 1.3 REQUIRED)
 
 if(${ROS_VERSION_INDIGO})
@@ -97,14 +88,12 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
-  ${Eigen_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 
 set(EXTERNAL_LIBRARIES
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
-  ${EIGEN3_LIBS}
 )
 
 ADD_SUBDIRECTORY( include/cslam )
