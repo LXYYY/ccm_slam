@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ccmslam)
-
+find_package(catkin_simple 0.1.0 REQUIRED)
+catkin_simple()
 set(PERFORMANCE_MODE TRUE)
 
 set(DEBUG_MODE 0)
@@ -17,7 +18,7 @@ else()
 set(ROS_VERSION_INDIGO FALSE)
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++14 -pthread -pipe ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++1y -pthread -pipe ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "-Wno-reorder -Wno-sign-compare -Wno-unused-function -Wno-strict-aliasing ${CMAKE_CXX_FLAGS}")
 if(NOT ${ROS_VERSION_INDIGO})
@@ -25,12 +26,16 @@ set(CMAKE_CXX_FLAGS "-Wno-unused-variable ${CMAKE_CXX_FLAGS}")
 endif()
 set(CMAKE_CXX_FLAGS "-Werror=parentheses -Werror=unused-value ${CMAKE_CXX_FLAGS}")
 if(${ROS_VERSION_INDIGO})
-#set(CMAKE_CXX_FLAGS "-Werror=unused-variable ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-Werror=unused-variable ${CMAKE_CXX_FLAGS}")
 endif()
 
 if(${PERFORMANCE_MODE})
     set(CMAKE_CXX_FLAGS "-Wfatal-errors ${CMAKE_CXX_FLAGS}")
     set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
+endif()
+
+if(${ROS_VERSION_INDIGO})
+    set(CMAKE_CXX_FLAGS "-L${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build/lib/ -lopencv_nonfree ${CMAKE_CXX_FLAGS}")
 endif()
 
 if(${DEBUG_MODE})
@@ -55,24 +60,25 @@ MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} )
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-find_package(OpenCV REQUIRED)
+if(NOT ${ROS_VERSION_INDIGO})
+    find_package(OpenCV REQUIRED)
+endif()
 
-find_package(catkin REQUIRED COMPONENTS g2o_catkin dbow2_catkin roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
+find_package(catkin REQUIRED COMPONENTS eigen_catkin roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport)
 find_package(cmake_modules REQUIRED)
 
-if(NOT ${ROS_VERSION_INDIGO})
-find_package(Eigen3 REQUIRED 3.0)
-else()
-find_package(Eigen REQUIRED 3.0)
-endif()
-include_directories(${EIGEN_INCLUDE_DIRS})
-add_definitions(${EIGEN_DEFINITIONS})
 find_package(PCL 1.3 REQUIRED)
+
+if(${ROS_VERSION_INDIGO})
+    set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build)
+    set(OpenCV_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build/include)
+    find_package(OpenCV 2.4.13 REQUIRED)
+endif()
 
 set(THIRDPARTY_LIBS
   ${OpenCV_LIBS}
 )
-
+message(${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o.so)
 catkin_package(
    INCLUDE_DIRS include
    CATKIN_DEPENDS ccmslam_msgs
@@ -84,14 +90,12 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
-  ${Eigen_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 
 set(EXTERNAL_LIBRARIES
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
-  ${EIGEN3_LIBS}
 )
 
 ADD_SUBDIRECTORY( include/cslam )
@@ -150,7 +154,10 @@ add_library(ccmslam_lib
 )
 
 add_dependencies(ccmslam_lib ccmslam_msgs_generate_messages_cpp)
-target_link_libraries(ccmslam_lib ${EXTERNAL_LIBRARIES} ${THIRDPARTY_LIBS})
+target_link_libraries(ccmslam_lib ${EXTERNAL_LIBRARIES} ${THIRDPARTY_LIBS}
+${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib/libDBoW2.so
+${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o.so
+)
 
 add_executable(ccmslamClientNode
 #node
@@ -177,3 +184,16 @@ add_executable(ccmslamServerNode
 )
 add_dependencies(ccmslamServerNode ccmslam_lib)
 target_link_libraries(ccmslamServerNode ${EXTERNAL_LIBRARIES} ccmslam_lib)
+
+install(TARGETS ccmslamClientNode ccmslamServerNode
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY
+launch
+# myfile2
+DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
