@@ -58,6 +58,8 @@ endif()
 
 MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} )
 
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 if(NOT ${ROS_VERSION_INDIGO})
     find_package(OpenCV REQUIRED)
 endif()
