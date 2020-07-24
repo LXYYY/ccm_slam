@@ -51,7 +51,7 @@ find_package(OpenCV 2.4.13
 
  REQUIRED)
 else()
-find_package(OpenCV 3.0 REQUIRED)
+find_package(OpenCV 2.4 REQUIRED)
 endif()
 
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
