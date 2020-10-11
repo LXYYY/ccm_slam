@@ -37,6 +37,7 @@
 #include <cslam/CentralControl.h>
 #include <cslam/Communicator.h>
 #include <cslam/Converter.h>
+#include <cslam/Datatypes.h>
 #include <cslam/Frame.h>
 #include <cslam/Initializer.h>
 #include <cslam/KeyFrame.h>
@@ -66,10 +67,11 @@ class KeyFrameDatabase;
 class CentralControl;
 class KeyFrame;
 class ORBmatcher;
+class Communicator;
 //------------
 
 class Tracking : public boost::enable_shared_from_this<Tracking> {
-public:
+ public:
   typedef boost::shared_ptr<Tracking> trackptr;
   typedef boost::shared_ptr<Viewer> viewptr;
   typedef boost::shared_ptr<CentralControl> ccptr;
@@ -82,14 +84,14 @@ public:
   typedef boost::shared_ptr<Initializer> initptr;
   typedef boost::shared_ptr<Frame> frameptr;
 
-public:
+ public:
   Tracking(ccptr pCC, vocptr pVoc, viewptr pFrameViewer, mapptr pMap,
-           dbptr pKFDB, const string &strCamPath, size_t ClientId,
-           int sensor = 0);
+           dbptr pKFDB, const string& strCamPath, size_t ClientId,
+           eSensor sensor = eSensor::MONOCULAR);
 
   // Preprocess the input and call Track(). Extract features and performs stereo
   // matching.
-  cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
+  cv::Mat GrabImageMonocular(const cv::Mat& im, const double& timestamp);
 
   // Pointer Setters
   void SetLocalMapper(mappingptr pLocalMapper) { mpLocalMapper = pLocalMapper; }
@@ -108,7 +110,7 @@ public:
   eTrackingState mLastProcessedState;
 
   // Input sensor
-  int mSensor;
+  eSensor mSensor;
 
   // Current Frame
   frameptr mCurrentFrame;
@@ -134,7 +136,7 @@ public:
 
   void Reset();
 
-protected:
+ protected:
   // Main tracking function. It is independent of the input sensor.
   void Track();
 
@@ -212,6 +214,6 @@ protected:
   bool mbRGB;
 };
 
-} // namespace cslam
+}  // namespace cslam
 
 #endif

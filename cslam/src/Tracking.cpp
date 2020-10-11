@@ -30,7 +30,7 @@ namespace cslam {
 
 Tracking::Tracking(ccptr pCC, vocptr pVoc, viewptr pFrameViewer, mapptr pMap,
                    dbptr pKFDB, const string& strCamPath, size_t ClientId,
-                   int sensor)
+                   eSensor sensor)
     : mState(NO_IMAGES_YET),
       mpCC(pCC),
       mpORBVocabulary(pVoc),
@@ -84,18 +84,18 @@ Tracking::Tracking(ccptr pCC, vocptr pVoc, viewptr pFrameViewer, mapptr pMap,
 
   mpORBextractor.reset(new ORBextractor(nFeatures, fScaleFactor, nLevels,
                                         iIniThFAST, iMinThFAST));
-  if (sensor == ClientSystem::MONOCULAR)
+  if (sensor == eSensor::MONOCULAR)
     mpIniORBextractor.reset(new ORBextractor(2 * nFeatures, fScaleFactor,
                                              nLevels, iIniThFAST, iMinThFAST));
-  if (sensor == ClientSystem::STEREO)
+  if (sensor == eSensor::STEREO)
     std::runtime_error("stereo not implemented yet");
 
-  if (sensor == ClientSystem::RGBD) {
+  if (sensor == eSensor::RGBD) {
     mThDepth = mbf * (float)mThDepth / fx;
     cout << endl << "Depth Threshold (Close/Far Points): " << mThDepth << endl;
   }
 
-  if (sensor == ClientSystem::RGBD) {
+  if (sensor == eSensor::RGBD) {
     if (fabs(mDepthMapFactor) < 1e-5)
       mDepthMapFactor = 1;
     else

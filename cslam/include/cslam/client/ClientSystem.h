@@ -26,9 +26,9 @@
 #define CSLAM_CLIENTSYSTEM_H_
 
 // C++
+#include <cv_bridge/cv_bridge.h>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
-#include <cv_bridge/cv_bridge.h>
 #include <mutex>
 #include <opencv2/opencv.hpp>
 #include <thread>
@@ -52,19 +52,18 @@ using namespace std;
 namespace cslam {
 
 class ClientSystem {
-public:
-  enum eSensor { MONOCULAR = 0, STEREO = 1, RGBD = 2 };
-
+ public:
   typedef boost::shared_ptr<ClientHandler> chptr;
   typedef boost::shared_ptr<KeyFrameDatabase> dbptr;
   typedef boost::shared_ptr<Map> mapptr;
 
-public:
+ public:
   ClientSystem(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
-               const string &strVocFile, const string &strCamFile);
+               const string& strVocFile, const string& strCamFile,
+               eSensor sensor = MONOCULAR);
 
-private:
-  void LoadVocabulary(const string &strVocFile);
+ private:
+  void LoadVocabulary(const string& strVocFile);
 
   // ROS infrastructure
   ros::NodeHandle mNh;
@@ -84,6 +83,6 @@ private:
   const uidptr mpUID;
 };
 
-} // namespace cslam
+}  // namespace cslam
 
 #endif
