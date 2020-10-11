@@ -87,10 +87,8 @@ Tracking::Tracking(ccptr pCC, vocptr pVoc, viewptr pFrameViewer, mapptr pMap,
   if (sensor == eSensor::MONOCULAR)
     mpIniORBextractor.reset(new ORBextractor(2 * nFeatures, fScaleFactor,
                                              nLevels, iIniThFAST, iMinThFAST));
-  if (sensor == eSensor::STEREO)
-    std::runtime_error("stereo not implemented yet");
 
-  if (sensor == eSensor::RGBD) {
+  if (sensor == eSensor::STEREO || sensor == eSensor::RGBD) {
     mThDepth = mbf * (float)mThDepth / fx;
     cout << endl << "Depth Threshold (Close/Far Points): " << mThDepth << endl;
   }
@@ -149,8 +147,40 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat& im,
   return mCurrentFrame->mTcw.clone();
 }
 
-cv::Mat Tracking::GrabImageRGBD(const cv::Mat& im, const cv::Mat& depthmap,
-                                const double& timestamp) {}
+cv::Mat Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
+                                const double& timestamp) {
+  mImGray = imRGB;
+  cv::Mat imDepth = imD;
+
+  if (mImGray.channels() == 3) {
+    if (mbRGB)
+      cvtColor(mImGray, mImGray, CV_RGB2GRAY);
+    else
+      cvtColor(mImGray, mImGray, CV_BGR2GRAY);
+  } else if (mImGray.channels() == 4) {
+    if (mbRGB)
+      cvtColor(mImGray, mImGray, CV_RGBA2GRAY);
+    else
+      cvtColor(mImGray, mImGray, CV_BGRA2GRAY);
+  }
+
+  if ((fabs(mDepthMapFactor - 1.0f) > 1e-5) || imDepth.type() != CV_32F)
+    imDepth.convertTo(imDepth, CV_32F, mDepthMapFactor);
+
+  if (mState == NOT_INITIALIZED || mState == NO_IMAGES_YET)
+    mCurrentFrame.reset(new Frame(mImGray, imDepth, timestamp,
+                                  mpIniORBextractor, mpORBVocabulary, mK,
+                                  mDistCoef, mbf, mThDepth, mClientId));
+  else {
+    mCurrentFrame.reset(new Frame(mImGray, imDepth, timestamp, mpORBextractor,
+                                  mpORBVocabulary, mK, mDistCoef, mbf, mThDepth,
+                                  mClientId));
+  }
+
+  Track();
+
+  return mCurrentFrame->mTcw.clone();
+}
 
 void Tracking::Track() {
   if (mState == NO_IMAGES_YET) {
