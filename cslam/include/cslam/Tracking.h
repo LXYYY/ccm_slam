@@ -92,6 +92,8 @@ class Tracking : public boost::enable_shared_from_this<Tracking> {
   // Preprocess the input and call Track(). Extract features and performs stereo
   // matching.
   cv::Mat GrabImageMonocular(const cv::Mat& im, const double& timestamp);
+  cv::Mat GrabImageRGBD(const cv::Mat& im, const cv::Mat& depthmap,
+                        const double& timestamp);
 
   // Pointer Setters
   void SetLocalMapper(mappingptr pLocalMapper) { mpLocalMapper = pLocalMapper; }

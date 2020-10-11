@@ -34,7 +34,10 @@
 #include <sstream>
 
 // ROS
-//...
+#include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/synchronizer.h>
+#include <sensor_msgs/Image.h>
 
 // CSLAM
 #include <cslam/CentralControl.h>
@@ -107,6 +110,8 @@ class ClientHandler : public boost::enable_shared_from_this<ClientHandler> {
 
   //---Agent side---
   void CamImgCb(sensor_msgs::ImageConstPtr pMsg);
+  void RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
+                 const sensor_msgs::ImageConstPtr& msgD);
   void Reset();
 
   //---Map Save/Load---
@@ -168,6 +173,16 @@ class ClientHandler : public boost::enable_shared_from_this<ClientHandler> {
   mutex mMutexReset;
 
   eSensor mSensor = eSensor::MONOCULAR;
+
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
+                                                          sensor_msgs::Image>
+      sync_pol;
+  message_filters::Subscriber<sensor_msgs::Image>* rgb_subscriber_;
+  message_filters::Subscriber<sensor_msgs::Image>* depth_subscriber_;
+  message_filters::Synchronizer<sync_pol>* sync_;
+
+  ros::Time mCurrentFrameTime;
+  cv::Mat mCurrentPosition;
 };
 
 }  // namespace cslam

@@ -60,9 +60,20 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
     std::string TopicNameCamSub;
 
     mNhPrivate.param("TopicNameCamSub", TopicNameCamSub, string("nospec"));
-    mSubCam = mNh.subscribe<sensor_msgs::Image>(
-        TopicNameCamSub, 10, boost::bind(&ClientHandler::CamImgCb, this, _1));
-
+    if (mSensor == eSensor::MONOCULAR) {
+      mSubCam = mNh.subscribe<sensor_msgs::Image>(
+          TopicNameCamSub, 10, boost::bind(&ClientHandler::CamImgCb, this, _1));
+    } else if (mSensor == eSensor::RGBD) {
+      std::string DepthTopicName;
+      mNhPrivate.param("DepthTopicName", DepthTopicName, string("nospec"));
+      rgb_subscriber_ = new message_filters::Subscriber<sensor_msgs::Image>(
+          mNh, TopicNameCamSub, 1);
+      depth_subscriber_ = new message_filters::Subscriber<sensor_msgs::Image>(
+          mNh, DepthTopicName, 1);
+      sync_ = new message_filters::Synchronizer<sync_pol>(
+          sync_pol(10), *rgb_subscriber_, *depth_subscriber_);
+      sync_->registerCallback(boost::bind(&ClientHandler::RGBDImgCb, this, _1, _2));
+    }
     cout << "Camera Input topic: " << TopicNameCamSub << endl;
   }
 
@@ -311,7 +322,42 @@ void ClientHandler::CamImgCb(sensor_msgs::ImageConstPtr pMsg) {
     }
   }
 
-  mpTracking->GrabImageMonocular(cv_ptr->image, cv_ptr->header.stamp.toSec());
+  mCurrentFrameTime = pMsg->header.stamp;
+  mCurrentPosition = mpTracking->GrabImageMonocular(
+      cv_ptr->image, cv_ptr->header.stamp.toSec());
+}
+
+void ClientHandler::RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
+                              const sensor_msgs::ImageConstPtr& msgD) {
+  // Copy the ros image message to cv::Mat.
+  cv_bridge::CvImageConstPtr cv_ptrRGB;
+  try {
+    cv_ptrRGB = cv_bridge::toCvShare(msgRGB);
+  } catch (cv_bridge::Exception& e) {
+    ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
+  }
+
+  cv_bridge::CvImageConstPtr cv_ptrD;
+  try {
+    cv_ptrD = cv_bridge::toCvShare(msgD);
+  } catch (cv_bridge::Exception& e) {
+    ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
+  }
+
+  // Check reset
+  {
+    unique_lock<mutex> lock(mMutexReset);
+    if (mbReset) {
+      mpTracking->Reset();
+      mbReset = false;
+    }
+  }
+
+  mCurrentFrameTime = msgRGB->header.stamp;
+  mCurrentPosition = mpTracking->GrabImageRGBD(cv_ptrRGB->image, cv_ptrD->image,
+                                               cv_ptrRGB->header.stamp.toSec());
 }
 
 void ClientHandler::LoadMap(const std::string& path_name) {

@@ -149,6 +149,9 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat& im,
   return mCurrentFrame->mTcw.clone();
 }
 
+cv::Mat Tracking::GrabImageRGBD(const cv::Mat& im, const cv::Mat& depthmap,
+                                const double& timestamp) {}
+
 void Tracking::Track() {
   if (mState == NO_IMAGES_YET) {
     mState = NOT_INITIALIZED;
