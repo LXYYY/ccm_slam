@@ -63,7 +63,7 @@ if(NOT ${ROS_VERSION_INDIGO})
     find_package(OpenCV REQUIRED)
 endif()
 
-find_package(catkin REQUIRED COMPONENTS roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport std_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS pcl_ros pcl_conversions roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport std_msgs message_generation)
 find_package(cmake_modules REQUIRED)
 
 add_service_files(
@@ -81,7 +81,7 @@ find_package(Eigen REQUIRED 3.0)
 endif()
 include_directories(${EIGEN_INCLUDE_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
-find_package(PCL 1.3 REQUIRED)
+# find_package(PCL 1.3 REQUIRED)
 
 if(${ROS_VERSION_INDIGO})
     set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build)
