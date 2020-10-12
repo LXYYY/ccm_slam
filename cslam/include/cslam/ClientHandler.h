@@ -190,6 +190,9 @@ class ClientHandler : public boost::enable_shared_from_this<ClientHandler> {
   tf::TransformBroadcaster tf_broadcaster_;
   void PublishPositionAsTransformCallback(const ros::TimerEvent& event);
   tf::Transform TransformFromMat(cv::Mat position_mat);
+
+ public:
+  void SetLoopSendFunc(fLoopSendFunc LoopSendFunc);
 };
 
 }  // namespace cslam

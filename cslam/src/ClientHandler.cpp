@@ -481,4 +481,8 @@ tf::Transform ClientHandler::TransformFromMat(cv::Mat position_mat) {
 
   return tf::Transform(tf_camera_rotation, tf_camera_translation);
 }
+
+void ClientHandler::SetLoopSendFunc(fLoopSendFunc LoopSendFunc) {
+  mpLoopFinder->SetLoopClosureSendFunc(LoopSendFunc);
+}
 }  // namespace cslam

@@ -25,6 +25,9 @@ enum eSystemState { NOTYPE = -1, CLIENT = 0, SERVER = 1 };
 
 enum eSensor { MONOCULAR = 0, STEREO = 1, RGBD = 2 };
 
+typedef std::function<bool(const size_t&, const double&, const size_t&,
+                           const double&, const cv::Mat&, const cv::Mat&)>
+    fLoopSendFunc;
 }  // namespace cslam
 
 #endif

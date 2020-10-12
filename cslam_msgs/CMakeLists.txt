@@ -22,6 +22,8 @@ add_message_files(
   MPred.msg
 
   Map.msg
+
+  LoopClosure.msg
 )
 
 generate_messages(

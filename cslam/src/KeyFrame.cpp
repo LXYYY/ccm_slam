@@ -1457,6 +1457,11 @@ void KeyFrame::ConvertToMessage(ccmslam_msgs::Map &msgMap, g2o::Sim3 mg2oS_wcurm
         Msg.cy = cy;
         Msg.invfx = invfx;
         Msg.invfy = invfy;
+        Msg.mbf=mbf;
+        Msg.mb=mb;
+        Msg.mThDepth=mThDepth;
+        Msg.mvDepth=mvDepth;
+        Msg.mvuRight=mvuRight;
 
         Msg.N = static_cast<int16_t>(N);
 
