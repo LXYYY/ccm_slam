@@ -183,6 +183,13 @@ class ClientHandler : public boost::enable_shared_from_this<ClientHandler> {
 
   ros::Time mCurrentFrameTime;
   cv::Mat mCurrentPosition;
+
+  std::string map_frame_id_param_;
+  std::string camera_frame_id_param_;
+  ros::Timer tf_timer_;
+  tf::TransformBroadcaster tf_broadcaster_;
+  void PublishPositionAsTransformCallback(const ros::TimerEvent& event);
+  tf::Transform TransformFromMat(cv::Mat position_mat);
 };
 
 }  // namespace cslam

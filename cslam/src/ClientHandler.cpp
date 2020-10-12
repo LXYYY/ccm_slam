@@ -23,6 +23,7 @@
  */
 
 #include <cslam/ClientHandler.h>
+#include <glog/logging.h>
 
 #include <string>
 
@@ -85,6 +86,13 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
           boost::bind(&ClientHandler::RGBDImgCb, this, _1, _2));
     }
     cout << "Camera Input topic: " << TopicNameCamSub << endl;
+
+    mNhPrivate.param<std::string>("map_frame_id", map_frame_id_param_, "map");
+    mNhPrivate.param<std::string>("camera_frame_id", camera_frame_id_param_,
+                                  "camera_link");
+    tf_timer_ = mNh.createTimer(
+        ros::Duration(0.01), &ClientHandler::PublishPositionAsTransformCallback,
+        this);
   }
 }
 
@@ -425,4 +433,52 @@ void ClientHandler::ClearCovGraph(size_t MapId) {
 //}
 //#endif
 
+void ClientHandler::PublishPositionAsTransformCallback(
+    const ros::TimerEvent& event) {
+  if (!mCurrentPosition.empty()) {
+    tf::Transform transform = TransformFromMat(mCurrentPosition);
+    tf_broadcaster_.sendTransform(
+        tf::StampedTransform(transform, mCurrentFrameTime, map_frame_id_param_,
+                             camera_frame_id_param_));
+  }
+}
+
+tf::Transform ClientHandler::TransformFromMat(cv::Mat position_mat) {
+  cv::Mat rotation(3, 3, CV_32F);
+  cv::Mat translation(3, 1, CV_32F);
+
+  rotation = position_mat.rowRange(0, 3).colRange(0, 3);
+  translation = position_mat.rowRange(0, 3).col(3);
+
+  tf::Matrix3x3 tf_camera_rotation(
+      rotation.at<float>(0, 0), rotation.at<float>(0, 1),
+      rotation.at<float>(0, 2), rotation.at<float>(1, 0),
+      rotation.at<float>(1, 1), rotation.at<float>(1, 2),
+      rotation.at<float>(2, 0), rotation.at<float>(2, 1),
+      rotation.at<float>(2, 2));
+
+  tf::Vector3 tf_camera_translation(translation.at<float>(0),
+                                    translation.at<float>(1),
+                                    translation.at<float>(2));
+
+  // Coordinate transformation matrix from orb coordinate system to ros
+  // coordinate system
+  const tf::Matrix3x3 tf_orb_to_ros(0, 0, 1, -1, 0, 0, 0, -1, 0);
+
+  // Transform from orb coordinate system to ros coordinate system on camera
+  // coordinates
+  tf_camera_rotation = tf_orb_to_ros * tf_camera_rotation;
+  tf_camera_translation = tf_orb_to_ros * tf_camera_translation;
+
+  // Inverse matrix
+  tf_camera_rotation = tf_camera_rotation.transpose();
+  tf_camera_translation = -(tf_camera_rotation * tf_camera_translation);
+
+  // Transform from orb coordinate system to ros coordinate system on map
+  // coordinates
+  tf_camera_rotation = tf_orb_to_ros * tf_camera_rotation;
+  tf_camera_translation = tf_orb_to_ros * tf_camera_translation;
+
+  return tf::Transform(tf_camera_rotation, tf_camera_translation);
+}
 }  // namespace cslam

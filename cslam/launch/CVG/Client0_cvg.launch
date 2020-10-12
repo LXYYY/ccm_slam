@@ -23,6 +23,8 @@
   <param name="~FrameId" type="string" value="robot_base" />
   <param name="~ClientId" type="int" value="0" />
 
+  <param name="~map_frame_id" type="string" value="map" />
+  <param name="~camera_frame_id" type="string" value="robot_base" />
   <param name="~TopicNameCamSub" type="string" value="/kinect2/qhd/image_color_rect" />
   <param name="~DepthTopicName" type="string" value="/kinect2/qhd/image_depth_rect" />
 
