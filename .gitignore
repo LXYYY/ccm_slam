@@ -7,3 +7,4 @@ cslam/thirdparty/g2o/lib/
 *.user
 cslam/output/map_data
 cslam/output/saved_maps
+TaskLists.md

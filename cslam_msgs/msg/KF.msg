@@ -19,6 +19,9 @@ bool mbAck
     float32 cy
     float32 invfx
     float32 invfy
+    float32 mbf
+    float32 mb
+    float32 mThDepth
 
 #Number of KeyPoints
     int16 N
@@ -26,6 +29,8 @@ bool mbAck
 #KeyPoints, stereo coordinate and descriptors (all associated by an index)
     CvKeyPoint[] mvKeysUn
     Descriptor[] mDescriptors
+    float32[] mvuRight
+    float32[] mvDepth
 
 #Pose relative to parent
     float32[16] mTcpred

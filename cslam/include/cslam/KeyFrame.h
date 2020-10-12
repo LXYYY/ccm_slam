@@ -316,7 +316,7 @@ public:
     idpair mCorrected_MM;
 
     // Calibration parameters
-    float fx, fy, cx, cy, invfx, invfy;
+    float fx, fy, cx, cy, invfx, invfy, mbf, mb, mThDepth;
 
     // Number of KeyPoints
     int N;
@@ -324,6 +324,8 @@ public:
     // KeyPoints, stereo coordinate and descriptors (all associated by an index)
     std::vector<cv::KeyPoint> mvKeys;
     std::vector<cv::KeyPoint> mvKeysUn;
+    std::vector<float> mvuRight; // negative value for monocular points
+    std::vector<float> mvDepth; // negative value for monocular points
     cv::Mat mDescriptors;
 
     //BoW

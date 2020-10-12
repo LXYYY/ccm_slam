@@ -68,7 +68,8 @@ KeyFrame::KeyFrame(Frame &F, mapptr pMap, dbptr pKFDB, commptr pComm, eSystemSta
       mBALocalForKF(defpair),mBAFixedForKF(defpair),mBAGlobalForKF(defpair),
       mSysState(SysState),mbOmitSending(false),
       mbLoopCorrected(false),
-      mbAck(false),mbFromServer(false),mbUpdatedByServer(false),mCorrected_MM(defpair),mbSendFull(true)
+      mbAck(false),mbFromServer(false),mbUpdatedByServer(false),mCorrected_MM(defpair),mbSendFull(true),
+      mbf(F.mbf), mb(F.mb), mThDepth(F.mThDepth), mvuRight(F.mvuRight), mvDepth(F.mvDepth)
 {
     mId=make_pair(nNextId++,F.mId.second);
 
@@ -1675,6 +1676,11 @@ void KeyFrame::WriteMembersFromMessage(ccmslam_msgs::KF *pMsg, g2o::Sim3 mg2oS_w
     cy=pMsg->cy;
     invfx=pMsg->invfx;
     invfy=pMsg->invfy;
+    mbf=pMsg->mbf;
+    mb=pMsg->mb;
+    mThDepth=pMsg->mThDepth;
+    mvuRight=pMsg->mvuRight;
+    mvDepth=pMsg->mvDepth;
 
     N=pMsg->N;
     mnScaleLevels=pMsg->mnScaleLevels;
