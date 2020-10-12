@@ -56,6 +56,15 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
 
   mg2oS_wcurmap_wclientmap = g2o::Sim3();  // identity transformation
 
+  std::string sensor = "Monocular";
+  mNhPrivate.param<std::string>("Sensor", sensor, sensor);
+  if (sensor == "Monocular")
+    mSensor = eSensor::MONOCULAR;
+  else if (sensor == "Stereo")
+    std::runtime_error("Stereo not implemented yet");
+  else if (sensor == "RGBD")
+    mSensor = eSensor::RGBD;
+
   if (mSysState == eSystemState::CLIENT) {
     std::string TopicNameCamSub;
 
@@ -72,19 +81,11 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
           mNh, DepthTopicName, 1);
       sync_ = new message_filters::Synchronizer<sync_pol>(
           sync_pol(10), *rgb_subscriber_, *depth_subscriber_);
-      sync_->registerCallback(boost::bind(&ClientHandler::RGBDImgCb, this, _1, _2));
+      sync_->registerCallback(
+          boost::bind(&ClientHandler::RGBDImgCb, this, _1, _2));
     }
     cout << "Camera Input topic: " << TopicNameCamSub << endl;
   }
-
-  std::string sensor = "Monocular";
-  mNhPrivate.param<std::string>("Sensor", sensor, sensor);
-  if (sensor == "Monocular")
-    mSensor = eSensor::MONOCULAR;
-  else if (sensor == "Stereo")
-    std::runtime_error("Stereo not implemented yet");
-  else if (sensor == "RGBD")
-    mSensor = eSensor::RGBD;
 }
 
 #ifdef LOGGING

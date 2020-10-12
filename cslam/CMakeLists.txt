@@ -63,7 +63,7 @@ if(NOT ${ROS_VERSION_INDIGO})
     find_package(OpenCV REQUIRED)
 endif()
 
-find_package(catkin REQUIRED COMPONENTS pcl_ros pcl_conversions roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport std_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS eigen_catkin opencv3_catkin pcl_ros pcl_conversions roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport std_msgs message_generation)
 find_package(cmake_modules REQUIRED)
 
 add_service_files(
@@ -74,20 +74,20 @@ add_service_files(
 # Generate added messages and services
 generate_messages(DEPENDENCIES std_msgs)
 
-if(NOT ${ROS_VERSION_INDIGO})
-find_package(Eigen3 REQUIRED 3.0)
-else()
-find_package(Eigen REQUIRED 3.0)
-endif()
-include_directories(${EIGEN_INCLUDE_DIRS})
-add_definitions(${EIGEN_DEFINITIONS})
+# if(NOT ${ROS_VERSION_INDIGO})
+# find_package(Eigen3 REQUIRED 3.0)
+# else()
+# find_package(Eigen REQUIRED 3.0)
+# endif()
+# include_directories(${EIGEN_INCLUDE_DIRS})
+# add_definitions(${EIGEN_DEFINITIONS})
 # find_package(PCL 1.3 REQUIRED)
 
-if(${ROS_VERSION_INDIGO})
-    set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build)
-    set(OpenCV_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build/include)
-    find_package(OpenCV 2.4.13 REQUIRED)
-endif()
+# if(${ROS_VERSION_INDIGO})
+#     set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build)
+#     set(OpenCV_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/thirdparty/opencv-2.4.13/build/include)
+#     find_package(OpenCV 2.4.13 REQUIRED)
+# endif()
 
 set(THIRDPARTY_LIBS
   ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o.so
@@ -106,15 +106,15 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/include
   ${PROJECT_SOURCE_DIR}/thirdparty
   ${catkin_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
-  ${Eigen_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
+  # ${PCL_INCLUDE_DIRS}
+  # ${Eigen_INCLUDE_DIRS}
+  # ${OpenCV_INCLUDE_DIRS}
 )
 
 set(EXTERNAL_LIBRARIES
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-  ${EIGEN3_LIBS}
+  # ${PCL_LIBRARIES}
+  # ${EIGEN3_LIBS}
 )
 
 ADD_SUBDIRECTORY( include/cslam )
