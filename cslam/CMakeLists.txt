@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ccmslam)
 
-set(PERFORMANCE_MODE TRUE)
+set(PERFORMANCE_MODE FALSE)
 
 set(DEBUG_MODE 0)
 
@@ -49,11 +49,11 @@ MESSAGE( STATUS "CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS} )
 #RelWithDebInfo : w/ debug symbols, w/ optimization
 #RelWithAsserts : w/o debug symbols, w/ optimization, w/ assertions (i.e., w/o -DNDEBUG). New in ros 1.1.
 #MinSizeRel : w/o debug symbols, w/ optimization, stripped binaries
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
-#set(CMAKE_BUILD_TYPE Debug)
-if(${PERFORMANCE_MODE})
-    set(CMAKE_BUILD_TYPE Release)
-endif()
+# set(CMAKE_BUILD_TYPE RelWithDebInfo)
+# #set(CMAKE_BUILD_TYPE Debug)
+# if(${PERFORMANCE_MODE})
+#     set(CMAKE_BUILD_TYPE Release)
+# endif()
 
 MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} )
 
@@ -63,7 +63,7 @@ if(NOT ${ROS_VERSION_INDIGO})
     find_package(OpenCV REQUIRED)
 endif()
 
-find_package(catkin REQUIRED COMPONENTS eigen_catkin opencv3_catkin pcl_ros pcl_conversions roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport std_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS glog_catkin eigen_catkin opencv3_catkin pcl_ros pcl_conversions roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport std_msgs message_generation)
 find_package(cmake_modules REQUIRED)
 
 add_service_files(

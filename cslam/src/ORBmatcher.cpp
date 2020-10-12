@@ -114,6 +114,13 @@ int ORBmatcher::SearchByProjection(Frame &F, const vector<mpptr> &vpMapPoints, c
                 if(F.mvpMapPoints[idx]->Observations()>0)
                     continue;
 
+            if(F.mvuRight[idx]>0)
+            {
+                const float er = fabs(pMP->mTrackProjXR-F.mvuRight[idx]);
+                if(er>r*F.mvScaleFactors[nPredictedLevel])
+                    continue;
+            }
+
             const cv::Mat &d = F.mDescriptors.row(idx);
 
             const int dist = DescriptorDistance(MPdescriptor,d);
@@ -1347,7 +1354,7 @@ int ORBmatcher::SearchBySim3(kfptr pKF1, kfptr pKF2, vector<mpptr> &vpMatches12,
     return nFound;
 }
 
-int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th)
+int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th, const bool bMono)
 {
     int nmatches = 0;
 
@@ -1366,6 +1373,9 @@ int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
     const cv::Mat tlw = LastFrame.mTcw.rowRange(0,3).col(3);
 
     const cv::Mat tlc = Rlw*twc+tlw;
+
+    const bool bForward = tlc.at<float>(2)>CurrentFrame.mb && !bMono;
+    const bool bBackward = -tlc.at<float>(2)>CurrentFrame.mb && !bMono;
 
     for(int i=0; i<LastFrame.N; i++)
     {
@@ -1401,6 +1411,11 @@ int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
 
                 vector<size_t> vIndices2;
 
+                if(bForward)
+                    vIndices2 = CurrentFrame.GetFeaturesInArea(u,v, radius, nLastOctave);
+                else if(bBackward)
+                    vIndices2 = CurrentFrame.GetFeaturesInArea(u,v, radius, 0, nLastOctave);
+                else
                 vIndices2 = CurrentFrame.GetFeaturesInArea(u,v, radius, nLastOctave-1, nLastOctave+1);
 
                 if(vIndices2.empty())
@@ -1417,6 +1432,14 @@ int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
                     if(CurrentFrame.mvpMapPoints[i2])
                         if(CurrentFrame.mvpMapPoints[i2]->Observations()>0)
                             continue;
+
+                    if(CurrentFrame.mvuRight[i2]>0)
+                    {
+                        const float ur = u - CurrentFrame.mbf*invzc;
+                        const float er = fabs(ur - CurrentFrame.mvuRight[i2]);
+                        if(er>radius)
+                            continue;
+                    }
 
                     const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
 

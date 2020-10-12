@@ -32,6 +32,8 @@ float Frame::cx, Frame::cy, Frame::fx, Frame::fy, Frame::invfx, Frame::invfy;
 float Frame::mnMinX, Frame::mnMinY, Frame::mnMaxX, Frame::mnMaxY;
 float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 
+Frame::Frame(size_t ClientId) : mId(make_pair(0, ClientId)) {}
+
 // Copy Constructor
 Frame::Frame(const Frame& frame)
     : mpORBvocabulary(frame.mpORBvocabulary),
@@ -123,7 +125,14 @@ Frame::Frame(const cv::Mat& imGray, const double& timeStamp,
 Frame::Frame(const cv::Mat& imGray, const cv::Mat& imDepth,
              const double& timeStamp, extractorptr pExtractor, vocptr pVoc,
              cv::Mat& K, cv::Mat& distCoef, const float& bf,
-             const float& thDepth, size_t ClientId) {
+             const float& thDepth, size_t ClientId)
+    : mpORBvocabulary(pVoc),
+      mpORBextractor(pExtractor),
+      mTimeStamp(timeStamp),
+      mK(K.clone()),
+      mDistCoef(distCoef.clone()),
+      mbf(bf),
+      mThDepth(thDepth) {
   // Frame ID
   mId = make_pair(nNextId++, ClientId);
 
@@ -254,6 +263,7 @@ bool Frame::isInFrustum(mpptr pMP, float viewingCosLimit) {
   // Data used by the tracking
   pMP->mbTrackInView = true;
   pMP->mTrackProjX = u;
+  pMP->mTrackProjXR = u - mbf * invz;
   pMP->mTrackProjY = v;
   pMP->mnTrackScaleLevel = nPredictedLevel;
   pMP->mTrackViewCos = viewCos;

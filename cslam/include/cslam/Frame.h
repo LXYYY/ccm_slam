@@ -63,6 +63,8 @@ class Frame : public boost::enable_shared_from_this<Frame> {
   typedef boost::shared_ptr<KeyFrame> kfptr;
 
  public:
+  Frame(size_t ClientId);
+
   // Copy constructor.
   Frame(const Frame& frame);
 

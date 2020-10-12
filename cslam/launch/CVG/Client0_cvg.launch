@@ -9,7 +9,12 @@
 
   <node pkg="tf" type="static_transform_publisher" name="linkC0_broadcaster" args="-100 300 5 -1.571 0 -2 world odomC0 100" /> 
 
-<node pkg="ccmslam" type="ccmslamClientNode" name="ccmslamClientNode0" args="$(find ccmslam)/conf/ORBvoc.txt $(arg cam)" output="screen">
+
+  <arg name="debug_client" default="true" />
+  <arg unless="$(arg debug_client)" name="launch_prefix_client" value=" " />
+  <arg if="$(arg debug_client)" name="launch_prefix_client" value="xterm -e gdb --args" />
+
+<node pkg="ccmslam" type="ccmslamClientNode" name="ccmslamClientNode0" args="$(find ccmslam)/conf/ORBvoc.txt $(arg cam)" output="screen" launch-prefix="$(arg launch_prefix_client)" >
 
   <!-- ++++++++++++++++++++++++++++++++++++++++++++++ -->
   <!-- Agent Specific Params - !!!MUST BE ADJUSTED!!! -->
