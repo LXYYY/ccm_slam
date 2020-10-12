@@ -105,6 +105,10 @@ class Frame : public boost::enable_shared_from_this<Frame> {
                                    const float& r, const int minLevel = -1,
                                    const int maxLevel = -1) const;
 
+  void ComputeStereoFromRGBD(const cv::Mat& imDepth);
+
+  cv::Mat UnprojectStereo(const int& i);
+
  public:
   // Vocabulary used for relocalization.
   vocptr mpORBvocabulary;
@@ -214,8 +218,6 @@ class Frame : public boost::enable_shared_from_this<Frame> {
   cv::Mat mtcw;
   cv::Mat mRwc;
   cv::Mat mOw;  //==mtwc
-
-  void ComputeStereoFromRGBD(const cv::Mat& imDepth);
 };
 
 }  // namespace cslam

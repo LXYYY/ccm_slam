@@ -198,7 +198,10 @@ void Tracking::Track() {
   // is mutual dependency in the call of reset()
 
   if (mState == NOT_INITIALIZED) {
-    MonocularInitialization();
+    if (mSensor == eSensor::STEREO || mSensor == eSensor::RGBD)
+      StereoInitialization();
+    else
+      MonocularInitialization();
 
     if (params::vis::mbActive)
       mpViewer->UpdateAndDrawFrame();
@@ -804,6 +807,7 @@ void Tracking::SearchLocalPoints() {
   if (nToMatch > 0) {
     ORBmatcher matcher(0.8);
     int th = 1;
+    if (mSensor == eSensor::RGBD) th = 3;
     // If the camera has been relocalised recently, perform a coarser search
     if (mCurrentFrame->mId.first < mLastRelocFrameId.first + 2) {
       th = 5;
@@ -985,6 +989,59 @@ Tracking::kfptr Tracking::GetReferenceKF() {
          << " Tracking assumed to be locked " << endl;
 
   return mpReferenceKF;
+}
+
+void Tracking::StereoInitialization() {
+  if (mCurrentFrame->N > 500) {
+    // Set Frame pose to the origin
+    mCurrentFrame->SetPose(cv::Mat::eye(4, 4, CV_32F));
+
+    // Create KeyFrame
+    kfptr pKFini(new KeyFrame(*mCurrentFrame, mpMap, mpKeyFrameDB, mpComm,
+                              eSystemState::CLIENT, -1));
+
+    // Insert KeyFrame in the map
+    mpMap->AddKeyFrame(pKFini);
+
+    // Create MapPoints and asscoiate to KeyFrame
+    for (int i = 0; i < mCurrentFrame->N; i++) {
+      float z = mCurrentFrame->mvDepth[i];
+      if (z > 0) {
+        cv::Mat x3D = mCurrentFrame->UnprojectStereo(i);
+        mpptr pNewMP(new MapPoint(x3D, pKFini, mpMap, mClientId, mpComm,
+                                  eSystemState::CLIENT, -1));
+        pNewMP->AddObservation(pKFini, i);
+        pKFini->AddMapPoint(pNewMP, i);
+        pNewMP->ComputeDistinctiveDescriptors();
+        pNewMP->UpdateNormalAndDepth();
+        mpMap->AddMapPoint(pNewMP);
+
+        mCurrentFrame->mvpMapPoints[i] = pNewMP;
+      }
+    }
+
+    cout << "New map created with " << mpMap->MapPointsInMap() << " points"
+         << endl;
+
+    mpLocalMapper->InsertKeyFrame(pKFini);
+
+    mLastFrame.reset(new Frame(*mCurrentFrame));
+    mLastKeyFrameId = mCurrentFrame->mId;
+    mpLastKeyFrame = pKFini;
+
+    mvpLocalKeyFrames.push_back(pKFini);
+    mvpLocalMapPoints = mpMap->GetAllMapPoints();
+    mpReferenceKF = pKFini;
+    mCurrentFrame->mpReferenceKF = pKFini;
+
+    mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
+
+    mpMap->mvpKeyFrameOrigins.push_back(pKFini);
+
+    // mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+
+    mState = OK;
+  }
 }
 
 }  // namespace cslam

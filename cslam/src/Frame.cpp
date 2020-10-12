@@ -409,4 +409,17 @@ void Frame::ComputeStereoFromRGBD(const cv::Mat& imDepth) {
   }
 }
 
+cv::Mat Frame::UnprojectStereo(const int& i) {
+  const float z = mvDepth[i];
+  if (z > 0) {
+    const float u = mvKeysUn[i].pt.x;
+    const float v = mvKeysUn[i].pt.y;
+    const float x = (u - cx) * z * invfx;
+    const float y = (v - cy) * z * invfy;
+    cv::Mat x3Dc = (cv::Mat_<float>(3, 1) << x, y, z);
+    return mRwc * x3Dc + mOw;
+  } else
+    return cv::Mat();
+}
+
 }  // namespace cslam
