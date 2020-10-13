@@ -544,7 +544,7 @@ bool MapMatcher::CheckKfQueue() {
 
 bool MapMatcher::SendMapFusionMsg() {
   return mMapFusionSendFunc(mpCurrentKF->mId.second, mpCurrentKF->mTimeStamp,
-                            mpCurrentKF->mId.second, mpMatchedKF->mTimeStamp,
+                            mpMatchedKF->mId.second, mpMatchedKF->mTimeStamp,
                             mRcm, mTcm);
 }
 

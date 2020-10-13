@@ -86,9 +86,10 @@ void LoopFinder::Run() {
         bool bSim3 = ComputeSim3();
         if (bSim3) {
           // Perform loop fusion and pose graph optimization
+          SendLoopClosureMsg();
 
           // TODO(mikexyl): make enabling correct loop configurable
-          CorrectLoop();
+          // CorrectLoop();
         }
       }
       mpCC->UnLockPlaceRec();
@@ -1117,7 +1118,7 @@ void LoopFinder::RunGBA(idpair nLoopKF, set<idpair> sChangedKFs) {
 
 bool LoopFinder::SendLoopClosureMsg() {
   return mLoopClosureSendFunc(mpCurrentKF->mId.second, mpCurrentKF->mTimeStamp,
-                              mpCurrentKF->mId.second, mpMatchedKF->mTimeStamp,
+                              mpMatchedKF->mId.second, mpMatchedKF->mTimeStamp,
                               mRcm, mTcm);
 }
 

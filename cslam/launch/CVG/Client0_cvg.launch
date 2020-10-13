@@ -1,38 +1,43 @@
 <?xml version="1.0"?>
 <launch>
+  <param name="use_sim_time" value="true"/>
   <node pkg="image_transport" type="republish" name="republish_color" args="compressed in:=/kinect2/qhd/image_color_rect raw out:=/kinect2/qhd/image_color_rect"/>
   <node pkg="image_transport" type="republish" name="republish_depth" args="compressed in:=/kinect2/qhd/image_depth_rect raw out:=/kinect2/qhd/image_depth_rect"/>
-<arg name="dist" default="0"/>
-<arg name="cam" default="$(find ccmslam)/conf/caminfo_kinect_cvg.yaml"/>
+  <arg name="dist" default="0"/>
+  <arg name="cam" default="$(find ccmslam)/conf/caminfo_kinect_cvg.yaml"/>
 
   <group ns="ccmslam">
 
-  <node pkg="tf" type="static_transform_publisher" name="linkC0_broadcaster" args="-100 300 5 -1.571 0 -2 world odomC0 100" /> 
+    <node pkg="tf" type="static_transform_publisher" name="linkC0_broadcaster" args="-100 300 5 -1.571 0 -2 world odomC0 100" />
 
 
-  <arg name="debug_client" default="true" />
-  <arg unless="$(arg debug_client)" name="launch_prefix_client" value=" " />
-  <arg if="$(arg debug_client)" name="launch_prefix_client" value="xterm -e gdb --args" />
+    <arg name="debug_client" default="false" />
+    <arg unless="$(arg debug_client)" name="launch_prefix_client" value=" " />
+    <arg if="$(arg debug_client)" name="launch_prefix_client" value="xterm -e gdb --args" />
 
-<node pkg="ccmslam" type="ccmslamClientNode" name="ccmslamClientNode0" args="$(find ccmslam)/conf/ORBvoc.txt $(arg cam)" output="screen" launch-prefix="$(arg launch_prefix_client)" >
+    <node pkg="ccmslam" type="ccmslamClientNode" name="ccmslamClientNode0" args="$(find ccmslam)/conf/ORBvoc.txt $(arg cam)" output="screen" launch-prefix="$(arg launch_prefix_client)">
 
-  <!-- ++++++++++++++++++++++++++++++++++++++++++++++ -->
-  <!-- Agent Specific Params - !!!MUST BE ADJUSTED!!! -->
+      <!-- ++++++++++++++++++++++++++++++++++++++++++++++ -->
+      <!-- Agent Specific Params - !!!MUST BE ADJUSTED!!! -->
 
-  <param name="~Sensor" type="string" value="RGBD" />
-  <param name="~FrameId" type="string" value="robot_base" />
-  <param name="~ClientId" type="int" value="0" />
+      <param name="~Sensor" type="string" value="RGBD" />
+      <param name="~FrameId" type="string" value="odomC0" />
+      <param name="~ClientId" type="int" value="0" />
 
-  <param name="~map_frame_id" type="string" value="map" />
-  <param name="~camera_frame_id" type="string" value="robot_base" />
-  <param name="~TopicNameCamSub" type="string" value="/kinect2/qhd/image_color_rect" />
-  <param name="~DepthTopicName" type="string" value="/kinect2/qhd/image_depth_rect" />
+      <param name="~map_frame_id" type="string" value="map" />
+      <param name="~camera_frame_id" type="string" value="robot_base_0" />
+      <param name="~TopicNameCamSub" type="string" value="/kinect2/qhd/image_color_rect" />
+      <param name="~DepthTopicName" type="string" value="/kinect2/qhd/image_depth_rect" />
 
-  <param name="~MapInTopicName" type="string" value="MapOutServer0" unless="$(arg dist)" />
-  <param name="~MapInTopicName" type="string" value="MapOutServer0Disturbed" if="$(arg dist)" /> 
+      <param name="~MapInTopicName" type="string" value="MapOutServer0" unless="$(arg dist)" />
+      <param name="~MapInTopicName" type="string" value="MapOutServer0Disturbed" if="$(arg dist)" />
 
-</node>
+    </node>
 
   </group>
+
+  <arg name="rosbag_path" default="/home/lxy/Datasets/eai-kinect-lab-short_2020-09-09-15-23-31.bag" />
+  <node name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -q --clock $(arg rosbag_path)" />
+
 </launch>
 

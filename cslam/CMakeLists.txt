@@ -63,7 +63,7 @@ if(NOT ${ROS_VERSION_INDIGO})
     find_package(OpenCV REQUIRED)
 endif()
 
-find_package(catkin REQUIRED COMPONENTS glog_catkin eigen_catkin opencv3_catkin pcl_ros pcl_conversions roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport std_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS g2o_catkin dbow2_catkin glog_catkin eigen_catkin opencv3_catkin pcl_ros pcl_conversions roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport std_msgs message_generation)
 find_package(cmake_modules REQUIRED)
 
 add_service_files(
@@ -90,9 +90,9 @@ generate_messages(DEPENDENCIES std_msgs)
 # endif()
 
 set(THIRDPARTY_LIBS
-  ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o.so
-  ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib/libDBoW2.so
-  ${OpenCV_LIBS}
+  # ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o.so
+  # ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib/libDBoW2.so
+  # ${OpenCV_LIBS}
 )
 
 catkin_package(

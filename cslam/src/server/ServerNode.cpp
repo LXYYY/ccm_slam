@@ -36,7 +36,7 @@ class LoopClosureSendFunctor {
   LoopClosureSendFunctor(const ros::Publisher& loop_closure_pub)
       : loop_closure_pub_(loop_closure_pub) {}
   bool operator()(const size_t& from_client_id, const double& from_timestamp,
-                  const double& to_client_id, const double& to_timestamp,
+                  const size_t& to_client_id, const double& to_timestamp,
                   const cv::Mat& R, const cv::Mat& t) {
     ccmslam_msgs::LoopClosure loop_closure_msg;
     loop_closure_msg.from_client_id = from_client_id;
@@ -55,10 +55,20 @@ class LoopClosureSendFunctor {
     loop_closure_msg.transform.translation.z = t.at<float>(2);
     loop_closure_pub_.publish(loop_closure_msg);
 
-    ROS_INFO(
-        "Loop Closure Message Published, from time %d, to "
-        "time %d",
-        loop_closure_msg.from_timestamp, loop_closure_msg.to_timestamp);
+    if (from_client_id == to_client_id) {
+      ROS_INFO(
+          "Loop Closure Message Published, from client %d time %d, to "
+          "time %d",
+          from_client_id, loop_closure_msg.from_timestamp,
+          loop_closure_msg.to_timestamp);
+    } else {
+      ROS_INFO(
+          "Map Fusion Message Published, from client %d time %d, to client "
+          "%d "
+          "time %d",
+          from_client_id, loop_closure_msg.from_timestamp, to_client_id,
+          loop_closure_msg.to_timestamp);
+    }
   }
 
  private:
