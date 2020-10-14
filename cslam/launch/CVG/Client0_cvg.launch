@@ -10,7 +10,6 @@
 
     <node pkg="tf" type="static_transform_publisher" name="linkC0_broadcaster" args="-100 300 5 -1.571 0 -2 world odomC0 100" />
 
-
     <arg name="debug_client" default="false" />
     <arg unless="$(arg debug_client)" name="launch_prefix_client" value=" " />
     <arg if="$(arg debug_client)" name="launch_prefix_client" value="xterm -e gdb --args" />
@@ -24,7 +23,7 @@
       <param name="~FrameId" type="string" value="odomC0" />
       <param name="~ClientId" type="int" value="0" />
 
-      <param name="~map_frame_id" type="string" value="map" />
+      <param name="~map_frame_id" type="string" value="map0" />
       <param name="~camera_frame_id" type="string" value="robot_base_0" />
       <param name="~TopicNameCamSub" type="string" value="/kinect2/qhd/image_color_rect" />
       <param name="~DepthTopicName" type="string" value="/kinect2/qhd/image_depth_rect" />
