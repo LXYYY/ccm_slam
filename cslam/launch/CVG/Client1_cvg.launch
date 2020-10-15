@@ -38,7 +38,7 @@
 
   <arg name="rosbag_path" default="/home/lxy/Datasets/eai-kinect-lab-short_2020-09-09-15-23-31.bag" />
   <arg name="rosbag_skip_first_n_sec" default="10" doc="Skip the first n seconds of the rosbag." />
-  <node name="player1" pkg="rosbag" type="play" output="screen" args="-r 1.0 -s $(arg rosbag_skip_first_n_sec) -q $(arg rosbag_path) /kinect2/qhd/image_color_rect/compressed:=/kinect2/qhd/image_color_rect1/compressed /kinect2/qhd/image_depth_rect/compressed:=/kinect2/qhd/image_depth_rect1/compressed /tf:=/tf_old" />
+  <node name="player1" pkg="rosbag" type="play" output="screen" args="-r 1.0 -d 5 -s $(arg rosbag_skip_first_n_sec) -q $(arg rosbag_path) /kinect2/qhd/image_color_rect/compressed:=/kinect2/qhd/image_color_rect1/compressed /kinect2/qhd/image_depth_rect/compressed:=/kinect2/qhd/image_depth_rect1/compressed /tf:=/tf_old" />
 
 </launch>
 

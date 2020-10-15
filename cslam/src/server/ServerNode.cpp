@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle NhPrivate("~");
 
   ros::Publisher loop_closure_pub =
-      Nh.advertise<ccmslam_msgs::LoopClosure>("loop_closure_input", 1);
+      Nh.advertise<ccmslam_msgs::LoopClosure>("map_fusion_out", 1);
   LoopClosureSendFunctor loop_closure_send_functor(loop_closure_pub);
   cslam::fLoopSendFunc loop_closure_send_func = loop_closure_send_functor;
 

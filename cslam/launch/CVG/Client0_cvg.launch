@@ -37,7 +37,7 @@
 
   <arg name="rosbag_path" default="/home/lxy/Datasets/eai-kinect-lab-short_2020-09-09-15-23-31.bag" />
   <arg name="rosbag_skip_first_n_sec" default="0" doc="Skip the first n seconds of the rosbag." />
-  <node name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -q -s $(arg rosbag_skip_first_n_sec) --clock $(arg rosbag_path)" />
+  <node name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -d 5 -q -s $(arg rosbag_skip_first_n_sec) --clock $(arg rosbag_path)" />
 
 </launch>
 
