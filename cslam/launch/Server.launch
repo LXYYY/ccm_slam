@@ -2,6 +2,7 @@
 <launch>
 
   <arg name="dist" default="0"/>
+  <arg name="debug" default="false" />
 
   <!-- -start disturber before group ns -->
   <group if="$(arg dist)">
@@ -15,7 +16,6 @@
     <node pkg="tf" type="static_transform_publisher" name="linkS2_broadcaster" args="0 0 5 -1.571 0 -2 world odomS2 100" />
     <node pkg="tf" type="static_transform_publisher" name="linkS3_broadcaster" args="0 0 5 -1.571 0 -2 world odomS3 100" />
 
-    <arg name="debug" default="false" />
     <arg unless="$(arg debug)" name="launch_prefix" value=" " />
     <arg if="$(arg debug)" name="launch_prefix" value="xterm -e gdb --args" />
 

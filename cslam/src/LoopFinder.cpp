@@ -339,6 +339,9 @@ bool LoopFinder::ComputeSim3() {
           mScw = Converter::toCvMat(mg2oScw);
 
           mvpCurrentMatchedPoints = vpMapPointMatches;
+
+          mRcm = R;
+          mTcm = t;
           break;
         }
       }
