@@ -37,15 +37,13 @@
 // TODO(mikexyl): based on some doc, publish should be thread safe already
 class LoopClosureSendFunctor {
  public:
-  LoopClosureSendFunctor(const ros::NodeHandle& nh_private)
-      : nh_private_(nh_private) {
+  LoopClosureSendFunctor(const ros::NodeHandle& nh) : nh_(nh) {
     for (int i = 0; i < kMaxClientNum; i++) {
-      loop_closure_pub_.emplace_back(
-          nh_private_.advertise<voxgraph_msgs::LoopClosure>(
-              "loop_closure_out_" + std::to_string(i), 10, true));
+      loop_closure_pub_.emplace_back(nh_.advertise<voxgraph_msgs::LoopClosure>(
+          "loop_closure_out_" + std::to_string(i), 10, true));
     }
-    map_fusion_pub_ = nh_private_.advertise<ccmslam_msgs::LoopClosure>(
-        "map_fusion_out", 10, true);
+    map_fusion_pub_ =
+        nh_.advertise<ccmslam_msgs::LoopClosure>("map_fusion_out", 10, true);
   }
 
   bool operator()(const size_t& from_client_id, const double& from_timestamp,
@@ -58,35 +56,26 @@ class LoopClosureSendFunctor {
     tf2::Quaternion tf2_quaternion;
     tf2_rot.getRotation(tf2_quaternion);
 
+    ccmslam_msgs::LoopClosure map_fusion_msg;
+    map_fusion_msg.from_client_id = from_client_id;
+    map_fusion_msg.from_timestamp = ros::Time(from_timestamp);
+    map_fusion_msg.to_client_id = to_client_id;
+    map_fusion_msg.to_timestamp = ros::Time(to_timestamp);
+    map_fusion_msg.transform.rotation = tf2::toMsg(tf2_quaternion);
+    map_fusion_msg.transform.translation.x = t.at<float>(0);
+    map_fusion_msg.transform.translation.y = t.at<float>(1);
+    map_fusion_msg.transform.translation.z = t.at<float>(2);
+    map_fusion_pub_.publish(map_fusion_msg);
     if (from_client_id == to_client_id) {
-      voxgraph_msgs::LoopClosure loop_closure_msg;
-      loop_closure_msg.from_timestamp = ros::Time(from_timestamp);
-      loop_closure_msg.to_timestamp = ros::Time(to_timestamp);
-      loop_closure_msg.transform.rotation = tf2::toMsg(tf2_quaternion);
-      loop_closure_msg.transform.translation.x = t.at<float>(0);
-      loop_closure_msg.transform.translation.y = t.at<float>(1);
-      loop_closure_msg.transform.translation.z = t.at<float>(2);
-      std::cout << "Loop Closure Message Published, from client "
-                << from_client_id << " " << loop_closure_msg.from_timestamp
-                << ", to "
-                   "time "
-                << loop_closure_msg.to_timestamp;
-      loop_closure_pub_[from_client_id].publish(loop_closure_msg);
+      ROS_INFO(
+          "Loop Closure Message Published, from client %d time %d, to "
+          "time %d",
+          from_client_id, map_fusion_msg.from_timestamp,
+          map_fusion_msg.to_timestamp);
     } else {
-      ccmslam_msgs::LoopClosure map_fusion_msg;
-      map_fusion_msg.from_client_id = from_client_id;
-      map_fusion_msg.from_timestamp = ros::Time(from_timestamp);
-      map_fusion_msg.to_client_id = to_client_id;
-      map_fusion_msg.to_timestamp = ros::Time(to_timestamp);
-      map_fusion_msg.transform.rotation = tf2::toMsg(tf2_quaternion);
-      map_fusion_msg.transform.translation.x = t.at<float>(0);
-      map_fusion_msg.transform.translation.y = t.at<float>(1);
-      map_fusion_msg.transform.translation.z = t.at<float>(2);
-      map_fusion_pub_.publish(map_fusion_msg);
       ROS_INFO(
           "Map Fusion Message Published, from client %d time %d, to client "
-          "%d "
-          "time %d",
+          "%d time %d ",
           from_client_id, map_fusion_msg.from_timestamp, to_client_id,
           map_fusion_msg.to_timestamp);
     }
@@ -94,7 +83,7 @@ class LoopClosureSendFunctor {
   }
 
  private:
-  ros::NodeHandle nh_private_;
+  ros::NodeHandle nh_;
   std::vector<ros::Publisher> loop_closure_pub_;
   ros::Publisher map_fusion_pub_;
 
@@ -113,7 +102,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle Nh;
   ros::NodeHandle NhPrivate("~");
 
-  LoopClosureSendFunctor loop_closure_send_functor(NhPrivate);
+  LoopClosureSendFunctor loop_closure_send_functor(Nh);
   cslam::fLoopSendFunc loop_closure_send_func = loop_closure_send_functor;
 
   boost::shared_ptr<cslam::ServerSystem> pSSys{
