@@ -438,7 +438,7 @@ void ClientHandler::PublishPositionAsTransformCallback(
   if (!mCurrentPosition.empty()) {
     tf::Transform transform = TransformFromMat(mCurrentPosition);
     tf_broadcaster_.sendTransform(
-        tf::StampedTransform(transform, mCurrentFrameTime, map_frame_id_param_,
+        tf::StampedTransform(transform, ros::Time::now(), map_frame_id_param_,
                              camera_frame_id_param_));
   }
 }
