@@ -1,0 +1,112 @@
+<?xml version="1.0"?>
+<launch>
+  <param name="use_sim_time" value="true"/>
+
+  <arg name="dist" default="0"/>
+  <arg name="debug" default="false" />
+  <arg unless="$(arg debug)" name="launch_prefix" value=" " />
+  <arg if="$(arg debug)" name="launch_prefix" value="xterm -e gdb --args" />
+  <arg name="debug_ccmser" default="false" />
+  <arg unless="$(arg debug_ccmser)" name="launch_prefix_ccmser" value="xterm -e" />
+  <arg if="$(arg debug_ccmser)" name="launch_prefix_ccmser" value="xterm -e gdb --args" />
+  <!-- -start disturber before group ns -->
+  <group if="$(arg dist)">
+    <node pkg="ccmslam" type="ccmslamCommTestDisturber" name="Disturber" args="0.0 0.0 0.0" output="screen" />
+  </group>
+
+  <group ns="ccmslam">
+
+    <node pkg="tf" type="static_transform_publisher" name="linkS0_broadcaster" args="0 0 5 -1.571 0 -2 world odomS0 100" />
+    <node pkg="tf" type="static_transform_publisher" name="linkS1_broadcaster" args="0 0 5 -1.571 0 -2 world odomS1 100" />
+    <node pkg="tf" type="static_transform_publisher" name="linkS2_broadcaster" args="0 0 5 -1.571 0 -2 world odomS2 100" />
+    <node pkg="tf" type="static_transform_publisher" name="linkS3_broadcaster" args="0 0 5 -1.571 0 -2 world odomS3 100" />
+
+    <node pkg="ccmslam" type="ccmslamServerNode" name="ccmslamServerNode" args="$(find ccmslam)/conf/ORBvoc.txt" output="screen" launch-prefix="$(arg launch_prefix_ccmser)">
+
+      <!-- +++++++++++++++++++++++++++++++++++++++++++++ -->
+      <!-- !!! ADJUST INPUT TOPIC NAMES IF NECESSARY !!! -->
+      <!-- +++++++++++++++++++++++++++++++++++++++++++++ -->
+
+      <param name="NumOfClients" type="int" value="2" />
+
+      <param name="LoadMap" type="bool" value="false" />
+
+      <!-- Client 0 -->
+
+      <param name="FrameId0" type="string" value="odomS0" />
+      <param name="~MapInTopicName0" type="string" value="MapOutClient0" unless="$(arg dist)" />
+      <param name="~MapInTopicName0" type="string" value="MapOutClient0Disturbed" if="$(arg dist)" />
+
+      <!-- Client 1 -->
+
+      <param name="FrameId1" type="string" value="odomS1" />
+      <param name="~MapInTopicName1" type="string" value="MapOutClient1" unless="$(arg dist)" />
+      <param name="~MapInTopicName1" type="string" value="MapOutClient1Disturbed" if="$(arg dist)" />
+
+      <!-- Client 2 -->
+
+      <param name="FrameId2" type="string" value="odomS2" />
+      <param name="~MapInTopicName2" type="string" value="MapOutClient2" unless="$(arg dist)" />
+      <param name="~MapInTopicName2" type="string" value="MapOutClient2Disturbed" if="$(arg dist)" />
+
+      <!-- Client 3 -->
+
+      <param name="FrameId3" type="string" value="odomS3" />
+      <param name="~MapInTopicName3" type="string" value="MapOutClient3" unless="$(arg dist)" />
+      <param name="~MapInTopicName3" type="string" value="MapOutClient3Disturbed" if="$(arg dist)" />
+
+      <remap from="~/loop_closure_out_0" to="/loop_closure_input"/>
+    </node>
+  </group>
+
+  <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen" launch-prefix="$(arg launch_prefix)" args="-alsologtostderr">
+    <rosparam file="$(find voxgraph)/config/voxgraph_mapper.yaml" />
+    <param name="input_odom_frame" value="map_0"/>
+    <param name="input_base_link_frame" value="robot_base_0"/>
+    <param name="output_mission_frame" value="mission_0"/>
+    <param name="output_odom_frame" value="map_0"/>
+    <param name="output_base_link_frame" value="robot_base_0"/>
+    <param name="output_sensor_frame" value="sensor_coxgraph_0"/>
+    <param name="tsdf_voxel_size" value="0.05"/>
+    <param name="tsdf_integrator/truncation_distance" value="0.15"/>
+    <param name="submap_topic" value="/tsdf_client_0/tsdf_map_out" />
+  </node>
+
+  <arg name="pointcloud_topic" default="/camera/depth_registered/sw_registered/points" doc="ROS topic for pointcloud input" />
+  <arg name="show_rviz" default="false" doc="Automatically launch Rviz." />
+  <arg name="scene_name" default="cvg_lab" />
+  <arg name="sensor_name" default="xtion" />
+  <arg name="visualize" default="false" />
+  <arg name="verbose" default="false"/>
+
+  <node pkg="tf" type="static_transform_publisher" name="map_to_mission" args="0 0 0 0 0 0 1 map mission 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="mission_to_map0" args="0 0 0 0 0 0 1 mission map_0 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="map0_to_mission0" args="0 0 0 0 0 0 1 map_0 mission_0 100"/>
+
+  <!--tf borrowed from realsense-->
+  <node pkg="tf" type="static_transform_publisher" name="base_to_kinect2_0" args="0 0 0 0.502 -0.499 0.503 -0.496 robot_base_0 camera_rgb_optical_frame 100"/>
+
+  <node pkg="nodelet" type="nodelet" name="nodelet_manager0" args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="cloudify0" args="load depth_image_proc/point_cloud_xyzrgb nodelet_manager0 --no-bond">
+    <remap from="depth_registered/image_rect" to="/camera/depth_registered/sw_registered/image_rect"/>
+    <remap from="depth_registered/points" to="$(arg pointcloud_topic)"/>
+    <remap from="rgb/image_rect_color" to="/camera/rgb/image_rect_color"/>
+    <remap from="rgb/camera_info" to="/camera/rgb/camera_info"/>
+  </node>
+
+  <node name="tsdf_client_0" pkg="voxblox_ros" type="tsdf_server" output="screen" args="-alsologtostderr" clear_params="true" launch-prefix="$(arg launch_prefix)">
+    <remap from="pointcloud" to="$(arg pointcloud_topic)"/>
+    <rosparam file="$(find maskgraph)/config/label_tsdf_server.yaml"/>
+    <rosparam file="$(find maskgraph)/config/segment_map.yaml"/>
+    <rosparam file="$(find maskgraph)/config/$(arg scene_name).yaml"/>
+    <rosparam file="$(find coxgraph)/config/$(arg sensor_name).yaml"/>
+    <param name="meshing/visualize" value="$(arg visualize)" />
+    <param name="enable_segment_map" value="false" />
+    <param name="enable_local_segment_map" value="false" />
+    <param name="verbose" value="$(arg verbose)" />
+    <param name="world_frame" value="map_0"/>
+    <!-- <param name="point_cloud_frame_id" value="kinect2_rgb_optical_frame_0" /> -->
+    <param name="point_cloud_frame_id" value="robot_base_0" />
+  </node>
+
+</launch>

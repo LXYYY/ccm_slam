@@ -63,7 +63,7 @@ if(NOT ${ROS_VERSION_INDIGO})
     find_package(OpenCV REQUIRED)
 endif()
 
-find_package(catkin REQUIRED COMPONENTS g2o_catkin dbow2_catkin glog_catkin eigen_catkin opencv3_catkin pcl_ros pcl_conversions roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport std_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS voxgraph_msgs g2o_catkin dbow2_catkin glog_catkin eigen_catkin opencv3_catkin pcl_ros pcl_conversions roscpp cv_bridge tf ccmslam_msgs pcl_ros tf_conversions image_transport std_msgs message_generation)
 find_package(cmake_modules REQUIRED)
 
 add_service_files(

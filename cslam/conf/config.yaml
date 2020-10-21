@@ -106,7 +106,7 @@ Comm.Server.SubMapBuffer: 1000
 #--------------------------------------------------------------------------------------------
 
 Placerec.NewLoopThres: 20
-Placerec.StartMapMatchingAfterKf: 30
+Placerec.StartMapMatchingAfterKf: 20
 
 Placerec.CovisibilityConsistencyTh: 3
 

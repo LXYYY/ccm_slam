@@ -29,51 +29,76 @@
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Vector3.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <voxgraph_msgs/LoopClosure.h>
+
+#include <string>
+#include <vector>
 
 // TODO(mikexyl): based on some doc, publish should be thread safe already
 class LoopClosureSendFunctor {
  public:
-  LoopClosureSendFunctor(const ros::Publisher& loop_closure_pub)
-      : loop_closure_pub_(loop_closure_pub) {}
+  LoopClosureSendFunctor(const ros::NodeHandle& nh_private)
+      : nh_private_(nh_private) {
+    for (int i = 0; i < kMaxClientNum; i++) {
+      loop_closure_pub_.emplace_back(
+          nh_private_.advertise<voxgraph_msgs::LoopClosure>(
+              "loop_closure_out_" + std::to_string(i), 10, true));
+    }
+    map_fusion_pub_ = nh_private_.advertise<ccmslam_msgs::LoopClosure>(
+        "map_fusion_out", 10, true);
+  }
+
   bool operator()(const size_t& from_client_id, const double& from_timestamp,
                   const size_t& to_client_id, const double& to_timestamp,
                   const cv::Mat& R, const cv::Mat& t) {
-    ccmslam_msgs::LoopClosure loop_closure_msg;
-    loop_closure_msg.from_client_id = from_client_id;
-    loop_closure_msg.from_timestamp = ros::Time(from_timestamp);
-    loop_closure_msg.to_client_id = to_client_id;
-    loop_closure_msg.to_timestamp = ros::Time(to_timestamp);
     tf2::Matrix3x3 tf2_rot(
         R.at<float>(0, 0), R.at<float>(0, 1), R.at<float>(0, 2),
         R.at<float>(1, 0), R.at<float>(1, 1), R.at<float>(1, 2),
         R.at<float>(2, 0), R.at<float>(2, 1), R.at<float>(2, 2));
     tf2::Quaternion tf2_quaternion;
     tf2_rot.getRotation(tf2_quaternion);
-    loop_closure_msg.transform.rotation = tf2::toMsg(tf2_quaternion);
-    loop_closure_msg.transform.translation.x = t.at<float>(0);
-    loop_closure_msg.transform.translation.y = t.at<float>(1);
-    loop_closure_msg.transform.translation.z = t.at<float>(2);
-    loop_closure_pub_.publish(loop_closure_msg);
 
     if (from_client_id == to_client_id) {
-      ROS_INFO(
-          "Loop Closure Message Published, from client %d time %d, to "
-          "time %d",
-          from_client_id, loop_closure_msg.from_timestamp,
-          loop_closure_msg.to_timestamp);
+      voxgraph_msgs::LoopClosure loop_closure_msg;
+      loop_closure_msg.from_timestamp = ros::Time(from_timestamp);
+      loop_closure_msg.to_timestamp = ros::Time(to_timestamp);
+      loop_closure_msg.transform.rotation = tf2::toMsg(tf2_quaternion);
+      loop_closure_msg.transform.translation.x = t.at<float>(0);
+      loop_closure_msg.transform.translation.y = t.at<float>(1);
+      loop_closure_msg.transform.translation.z = t.at<float>(2);
+      std::cout << "Loop Closure Message Published, from client "
+                << from_client_id << " " << loop_closure_msg.from_timestamp
+                << ", to "
+                   "time "
+                << loop_closure_msg.to_timestamp;
+      loop_closure_pub_[from_client_id].publish(loop_closure_msg);
     } else {
+      ccmslam_msgs::LoopClosure map_fusion_msg;
+      map_fusion_msg.from_client_id = from_client_id;
+      map_fusion_msg.from_timestamp = ros::Time(from_timestamp);
+      map_fusion_msg.to_client_id = to_client_id;
+      map_fusion_msg.to_timestamp = ros::Time(to_timestamp);
+      map_fusion_msg.transform.rotation = tf2::toMsg(tf2_quaternion);
+      map_fusion_msg.transform.translation.x = t.at<float>(0);
+      map_fusion_msg.transform.translation.y = t.at<float>(1);
+      map_fusion_msg.transform.translation.z = t.at<float>(2);
+      map_fusion_pub_.publish(map_fusion_msg);
       ROS_INFO(
           "Map Fusion Message Published, from client %d time %d, to client "
           "%d "
           "time %d",
-          from_client_id, loop_closure_msg.from_timestamp, to_client_id,
-          loop_closure_msg.to_timestamp);
+          from_client_id, map_fusion_msg.from_timestamp, to_client_id,
+          map_fusion_msg.to_timestamp);
     }
+    return true;
   }
 
  private:
-  ros::NodeHandle node_handle_;
-  const ros::Publisher& loop_closure_pub_;
+  ros::NodeHandle nh_private_;
+  std::vector<ros::Publisher> loop_closure_pub_;
+  ros::Publisher map_fusion_pub_;
+
+  constexpr static int kMaxClientNum = 4;
 };
 
 int main(int argc, char** argv) {
@@ -88,9 +113,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle Nh;
   ros::NodeHandle NhPrivate("~");
 
-  ros::Publisher loop_closure_pub =
-      Nh.advertise<ccmslam_msgs::LoopClosure>("map_fusion_out", 1);
-  LoopClosureSendFunctor loop_closure_send_functor(loop_closure_pub);
+  LoopClosureSendFunctor loop_closure_send_functor(NhPrivate);
   cslam::fLoopSendFunc loop_closure_send_func = loop_closure_send_functor;
 
   boost::shared_ptr<cslam::ServerSystem> pSSys{
