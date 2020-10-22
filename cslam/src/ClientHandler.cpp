@@ -94,6 +94,11 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
         ros::Duration(0.01), &ClientHandler::PublishPositionAsTransformCallback,
         this);
   }
+
+  mNh.param<bool>("use_sim_time", use_sim_time_, use_sim_time_);
+  cout << "Use sim time? "
+       << static_cast<std::string>(use_sim_time_ ? "enabled" : "disabled")
+       << endl;
 }
 
 #ifdef LOGGING
@@ -331,9 +336,12 @@ void ClientHandler::CamImgCb(sensor_msgs::ImageConstPtr pMsg) {
     }
   }
 
-  mCurrentFrameTime = pMsg->header.stamp;
-  mCurrentPosition = mpTracking->GrabImageMonocular(
-      cv_ptr->image, cv_ptr->header.stamp.toSec());
+  if (use_sim_time_)
+    mCurrentFrameTime = ros::Time::now();
+  else
+    mCurrentFrameTime = pMsg->header.stamp;
+  mCurrentPosition =
+      mpTracking->GrabImageMonocular(cv_ptr->image, mCurrentFrameTime.toSec());
 }
 
 void ClientHandler::RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
@@ -364,9 +372,12 @@ void ClientHandler::RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
     }
   }
 
-  mCurrentFrameTime = msgRGB->header.stamp;
+  if (use_sim_time_)
+    mCurrentFrameTime = ros::Time::now();
+  else
+    mCurrentFrameTime = msgRGB->header.stamp;
   mCurrentPosition = mpTracking->GrabImageRGBD(cv_ptrRGB->image, cv_ptrD->image,
-                                               cv_ptrRGB->header.stamp.toSec());
+                                               mCurrentFrameTime.toSec());
 }
 
 void ClientHandler::LoadMap(const std::string& path_name) {
@@ -438,7 +449,7 @@ void ClientHandler::PublishPositionAsTransformCallback(
   if (!mCurrentPosition.empty()) {
     tf::Transform transform = TransformFromMat(mCurrentPosition);
     tf_broadcaster_.sendTransform(
-        tf::StampedTransform(transform, ros::Time::now(), map_frame_id_param_,
+        tf::StampedTransform(transform, mCurrentFrameTime, map_frame_id_param_,
                              camera_frame_id_param_));
   }
 }

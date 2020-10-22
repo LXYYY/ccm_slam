@@ -191,6 +191,8 @@ class ClientHandler : public boost::enable_shared_from_this<ClientHandler> {
   void PublishPositionAsTransformCallback(const ros::TimerEvent& event);
   tf::Transform TransformFromMat(cv::Mat position_mat);
 
+  bool use_sim_time_ = true;
+
  public:
   void SetLoopSendFunc(fLoopSendFunc LoopSendFunc);
 };
