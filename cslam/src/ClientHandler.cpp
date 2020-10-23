@@ -336,10 +336,7 @@ void ClientHandler::CamImgCb(sensor_msgs::ImageConstPtr pMsg) {
     }
   }
 
-  if (use_sim_time_)
-    mCurrentFrameTime = ros::Time::now();
-  else
-    mCurrentFrameTime = pMsg->header.stamp;
+  mCurrentFrameTime = pMsg->header.stamp;
   mCurrentPosition =
       mpTracking->GrabImageMonocular(cv_ptr->image, mCurrentFrameTime.toSec());
 }
@@ -372,10 +369,7 @@ void ClientHandler::RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
     }
   }
 
-  if (use_sim_time_)
-    mCurrentFrameTime = ros::Time::now();
-  else
-    mCurrentFrameTime = msgRGB->header.stamp;
+  mCurrentFrameTime = msgRGB->header.stamp;
   mCurrentPosition = mpTracking->GrabImageRGBD(cv_ptrRGB->image, cv_ptrD->image,
                                                mCurrentFrameTime.toSec());
 }

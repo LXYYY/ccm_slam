@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <param name="use_sim_time" value="true"/>
-  <arg name="sensor" default="kinect"/>
+  <arg name="sensor" default="xtion"/>
   <node pkg="image_transport" type="republish" name="republish_color" args="compressed in:=/kinect2/qhd/image_color_rect raw out:=/kinect2/qhd/image_color_rect"/>
   <node pkg="image_transport" type="republish" name="republish_depth" args="compressed in:=/kinect2/qhd/image_depth_rect raw out:=/kinect2/qhd/image_depth_rect"/>
   <arg name="dist" default="0"/>
@@ -41,9 +41,11 @@
 
   </group>
 
-  <arg name="rosbag_path" default="/home/lxy/Datasets/eai-kinect-lab-short_2020-09-09-15-23-31.bag" />
+  <arg if="$(eval sensor == 'xtion')" name="rosbag_path" default="/home/lxy/Datasets/eai-xtion-lab_2020-10-21-10-51-48.bag"/>
+  <arg if="$(eval sensor == 'kinect')" name="rosbag_path" default="/home/lxy/Datasets/eai-kinect-lab-short_2020-09-09-15-23-31.bag"/>
+
   <arg name="rosbag_skip_first_n_sec" default="0" doc="Skip the first n seconds of the rosbag." />
-  <node name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -d 5 -q -s $(arg rosbag_skip_first_n_sec) --clock $(arg rosbag_path)" />
+  <node name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -d 6 -q -s $(arg rosbag_skip_first_n_sec) --clock $(arg rosbag_path)" />
 
 </launch>
 
