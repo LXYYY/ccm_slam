@@ -26,13 +26,14 @@
 
 namespace cslam {
 
-LoopFinder::LoopFinder(ccptr pCC, dbptr pDB, vocptr pVoc, mapptr pMap)
+LoopFinder::LoopFinder(ccptr pCC, dbptr pDB, vocptr pVoc, mapptr pMap,
+                       bool bFixScale)
     : mpCC(pCC),
       mpKFDB(pDB),
       mpVoc(pVoc),
       mpMap(pMap),
       mbResetRequested(false),
-      mbFixScale(false),
+      mbFixScale(bFixScale),
       mKFcount(0),
       mKFNewLoopThres(params::placerec::miNewLoopThres),
       mnCovisibilityConsistencyTh(

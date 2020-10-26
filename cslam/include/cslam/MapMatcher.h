@@ -99,7 +99,7 @@ class MapMatcher : public boost::enable_shared_from_this<MapMatcher> {
  public:
   MapMatcher(ros::NodeHandle Nh, ros::NodeHandle NhPrivate, dbptr pDB,
              vocptr pVoc, mapptr pMap0, mapptr pMap1, mapptr pMap2,
-             mapptr pMap3);
+             mapptr pMap3, bool bFixScale);
 
   void Run();
   void InsertKF(kfptr pKF);

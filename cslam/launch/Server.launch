@@ -3,6 +3,7 @@
 
   <arg name="dist" default="0"/>
   <arg name="debug" default="true" />
+  <arg name="sensor_type" default="RGBD"/>
 
   <!-- -start disturber before group ns -->
   <group if="$(arg dist)">
@@ -24,6 +25,8 @@
       <!-- +++++++++++++++++++++++++++++++++++++++++++++ -->
       <!-- !!! ADJUST INPUT TOPIC NAMES IF NECESSARY !!! -->
       <!-- +++++++++++++++++++++++++++++++++++++++++++++ -->
+
+      <param name="~Sensor" type="string" value="$(arg sensor_type)" />
 
       <param name="NumOfClients" type="int" value="2" />
 

@@ -28,7 +28,7 @@ namespace cslam {
 
 MapMatcher::MapMatcher(ros::NodeHandle Nh, ros::NodeHandle NhPrivate, dbptr pDB,
                        vocptr pVoc, mapptr pMap0, mapptr pMap1, mapptr pMap2,
-                       mapptr pMap3)
+                       mapptr pMap3, bool bFixScale)
     : mNh(Nh),
       mNhPrivate(NhPrivate),
       mpKFDB(pDB),
@@ -38,7 +38,7 @@ MapMatcher::MapMatcher(ros::NodeHandle Nh, ros::NodeHandle NhPrivate, dbptr pDB,
       mpMap2(pMap2),
       mpMap3(pMap3),
       mLastLoopKFid(0),
-      mbFixScale(false),
+      mbFixScale(bFixScale),
       mnCovisibilityConsistencyTh(
           params::placerec::miCovisibilityConsistencyTh) {
   if (pMap0) mmpMaps[*(pMap0->msuAssClients.begin())] = pMap0;

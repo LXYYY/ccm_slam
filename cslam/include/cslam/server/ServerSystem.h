@@ -111,6 +111,7 @@ class ServerSystem {
   int mNumOfClients;
   int mMaxClients;
 
+  eSensor mSensor;
 #ifdef LOGGING
   boost::shared_ptr<estd::mylog> mpLogger;
   threadptr mptLogger;

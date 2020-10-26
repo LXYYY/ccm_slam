@@ -233,7 +233,8 @@ void ClientHandler::InitializeServer(bool bLoadMap) {
   cout << "Client " << mClientId << " --> Initialize Threads" << endl;
 
   //+++++ Initialize the Loop Finder thread and launch +++++
-  mpLoopFinder.reset(new LoopFinder(mpCC, mpKFDB, mpVoc, mpMap));
+  mpLoopFinder.reset(new LoopFinder(mpCC, mpKFDB, mpVoc, mpMap,
+                                    mSensor != eSensor::MONOCULAR));
   mptLoopClosure.reset(new thread(&LoopFinder::Run, mpLoopFinder));
   usleep(10000);
   //+++++ Initialize the Local Mapping thread +++++

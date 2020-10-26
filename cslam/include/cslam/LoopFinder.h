@@ -81,7 +81,7 @@ class LoopFinder {
       KeyFrameAndPose;
 
  public:
-  LoopFinder(ccptr pCC, dbptr pDB, vocptr pVoc, mapptr pMap);
+  LoopFinder(ccptr pCC, dbptr pDB, vocptr pVoc, mapptr pMap, bool bFixScale);
 
   void Run();
   void InsertKF(kfptr pKF);
