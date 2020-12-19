@@ -45,7 +45,8 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
       mstrCamFile(strCamFile),
       mpViewer(pViewer),
       mbReset(false),
-      mbLoadedMap(bLoadMap) {
+      mbLoadedMap(bLoadMap),
+      mbDoRectify(true) {
   if (mpVoc == nullptr || mpKFDB == nullptr || mpMap == nullptr ||
       (mpUID == nullptr && mSysState == eSystemState::SERVER)) {
     cout << ("In \" ClientHandler::ClientHandler(...)\": nullptr exception")
@@ -73,6 +74,7 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
     if (mSensor == eSensor::MONOCULAR) {
       mSubCam = mNh.subscribe<sensor_msgs::Image>(
           TopicNameCamSub, 10, boost::bind(&ClientHandler::CamImgCb, this, _1));
+
     } else if (mSensor == eSensor::RGBD) {
       std::string DepthTopicName;
       mNhPrivate.param("DepthTopicName", DepthTopicName, string("nospec"));
@@ -84,7 +86,51 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
           sync_pol(10), *rgb_subscriber_, *depth_subscriber_);
       sync_->registerCallback(
           boost::bind(&ClientHandler::RGBDImgCb, this, _1, _2));
+
     } else if (mSensor == eSensor::STEREO) {
+      mbDoRectify = mNhPrivate.param("do_rectify", mbDoRectify, mbDoRectify);
+      if (mbDoRectify) {
+        // Load settings related to stereo calibration
+        cv::FileStorage fsSettings(mstrCamFile, cv::FileStorage::READ);
+        if (!fsSettings.isOpened()) {
+          cerr << "ERROR: Wrong path to settings" << endl;
+          throw std::runtime_error("wrong setting path");
+        }
+
+        cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r;
+        fsSettings["LEFT.K"] >> K_l;
+        fsSettings["RIGHT.K"] >> K_r;
+
+        fsSettings["LEFT.P"] >> P_l;
+        fsSettings["RIGHT.P"] >> P_r;
+
+        fsSettings["LEFT.R"] >> R_l;
+        fsSettings["RIGHT.R"] >> R_r;
+
+        fsSettings["LEFT.D"] >> D_l;
+        fsSettings["RIGHT.D"] >> D_r;
+
+        int rows_l = fsSettings["LEFT.height"];
+        int cols_l = fsSettings["LEFT.width"];
+        int rows_r = fsSettings["RIGHT.height"];
+        int cols_r = fsSettings["RIGHT.width"];
+
+        if (K_l.empty() || K_r.empty() || P_l.empty() || P_r.empty() ||
+            R_l.empty() || R_r.empty() || D_l.empty() || D_r.empty() ||
+            rows_l == 0 || rows_r == 0 || cols_l == 0 || cols_r == 0) {
+          cerr << "ERROR: Calibration parameters to rectify stereo are missing!"
+               << endl;
+          throw std::runtime_error("no calib params");
+        }
+
+        cv::initUndistortRectifyMap(
+            K_l, D_l, R_l, P_l.rowRange(0, 3).colRange(0, 3),
+            cv::Size(cols_l, rows_l), CV_32F, mM1l, mM2l);
+        cv::initUndistortRectifyMap(
+            K_r, D_r, R_r, P_r.rowRange(0, 3).colRange(0, 3),
+            cv::Size(cols_r, rows_r), CV_32F, mM1r, mM2r);
+      }
+
       std::string RightTopicName;
       mNhPrivate.param("RightTopicName", RightTopicName, string("nospec"));
       left_subscriber_ = new message_filters::Subscriber<sensor_msgs::Image>(

@@ -185,6 +185,8 @@ class ClientHandler : public boost::enable_shared_from_this<ClientHandler> {
   message_filters::Subscriber<sensor_msgs::Image>* right_subscriber_;
   message_filters::Synchronizer<sync_pol>* sync_;
 
+  cv::Mat mM1l,mM2l,mM1r,mM2r;
+  bool mbDoRectify;
 };
 
 }  // namespace cslam
