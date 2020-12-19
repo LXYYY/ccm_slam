@@ -356,8 +356,12 @@ void LocalMapping::CreateNewMapPoints()
             const int &idx2 = vMatchedIndices[ikp].second;
 
             const cv::KeyPoint &kp1 = mpCurrentKeyFrame->mvKeysUn[idx1];
+            const float kp1_ur=mpCurrentKeyFrame->mvuRight[idx1];
+            bool bStereo1 = kp1_ur>=0;
 
             const cv::KeyPoint &kp2 = pKF2->mvKeysUn[idx2];
+            const float kp2_ur = pKF2->mvuRight[idx2];
+            bool bStereo2 = kp2_ur>=0;
 
             // Check parallax between rays
             cv::Mat xn1 = (cv::Mat_<float>(3,1) << (kp1.pt.x-cx1)*invfx1, (kp1.pt.y-cy1)*invfy1, 1.0);
@@ -368,9 +372,18 @@ void LocalMapping::CreateNewMapPoints()
             const float cosParallaxRays = ray1.dot(ray2)/(cv::norm(ray1)*cv::norm(ray2));
 
             float cosParallaxStereo = cosParallaxRays+1;
+            float cosParallaxStereo1 = cosParallaxStereo;
+            float cosParallaxStereo2 = cosParallaxStereo;
+
+            if(bStereo1)
+                cosParallaxStereo1 = cos(2*atan2(mpCurrentKeyFrame->mb/2,mpCurrentKeyFrame->mvDepth[idx1]));
+            else if(bStereo2)
+                cosParallaxStereo2 = cos(2*atan2(pKF2->mb/2,pKF2->mvDepth[idx2]));
+
+            cosParallaxStereo = min(cosParallaxStereo1,cosParallaxStereo2);
 
             cv::Mat x3D;
-            if(cosParallaxRays<cosParallaxStereo && cosParallaxRays>0 && (cosParallaxRays<0.9998))
+            if(cosParallaxRays<cosParallaxStereo && cosParallaxRays>0 && ( bStereo1 || bStereo2 ||cosParallaxRays<0.9998))
             {
                 // Linear Triangulation Method
                 cv::Mat A(4,4,CV_32F);
@@ -391,7 +404,14 @@ void LocalMapping::CreateNewMapPoints()
                 x3D = x3D.rowRange(0,3)/x3D.at<float>(3);
 
             }
-            else
+            else if(bStereo1 && cosParallaxStereo1<cosParallaxStereo2)
+            {
+                x3D = mpCurrentKeyFrame->UnprojectStereo(idx1);                
+            }
+            else if(bStereo2 && cosParallaxStereo2<cosParallaxStereo1)
+            {
+                x3D = pKF2->UnprojectStereo(idx2);
+            }  else
                 continue; //No stereo and very low parallax
 
             cv::Mat x3Dt = x3D.t();
@@ -411,25 +431,52 @@ void LocalMapping::CreateNewMapPoints()
             const float y1 = Rcw1.row(1).dot(x3Dt)+tcw1.at<float>(1);
             const float invz1 = 1.0/z1;
 
-            float u1 = fx1*x1*invz1+cx1;
-            float v1 = fy1*y1*invz1+cy1;
-            float errX1 = u1 - kp1.pt.x;
-            float errY1 = v1 - kp1.pt.y;
-            if((errX1*errX1+errY1*errY1)>5.991*sigmaSquare1)
-                continue;
+            if(!bStereo1)
+            {
+                float u1 = fx1*x1*invz1+cx1;
+                float v1 = fy1*y1*invz1+cy1;
+                float errX1 = u1 - kp1.pt.x;
+                float errY1 = v1 - kp1.pt.y;
+                if((errX1*errX1+errY1*errY1)>5.991*sigmaSquare1)
+                    continue;
+            }
+            else
+            {
+                float u1 = fx1*x1*invz1+cx1;
+                float u1_r = u1 - mpCurrentKeyFrame->mbf*invz1;
+                float v1 = fy1*y1*invz1+cy1;
+                float errX1 = u1 - kp1.pt.x;
+                float errY1 = v1 - kp1.pt.y;
+                float errX1_r = u1_r - kp1_ur;
+                if((errX1*errX1+errY1*errY1+errX1_r*errX1_r)>7.8*sigmaSquare1)
+                    continue;
+            }
 
             //Check reprojection error in second keyframe
             const float sigmaSquare2 = pKF2->mvLevelSigma2[kp2.octave];
             const float x2 = Rcw2.row(0).dot(x3Dt)+tcw2.at<float>(0);
             const float y2 = Rcw2.row(1).dot(x3Dt)+tcw2.at<float>(1);
             const float invz2 = 1.0/z2;
+            if(!bStereo2){
+                float u2 = fx2*x2*invz2+cx2;
+                float v2 = fy2*y2*invz2+cy2;
+                float errX2 = u2 - kp2.pt.x;
+                float errY2 = v2 - kp2.pt.y;
+                if((errX2*errX2+errY2*errY2)>5.991*sigmaSquare2)
+                    continue;
+            }
+            else
+            {
+                float u2 = fx2*x2*invz2+cx2;
+                float u2_r = u2 - mpCurrentKeyFrame->mbf*invz2;
+                float v2 = fy2*y2*invz2+cy2;
+                float errX2 = u2 - kp2.pt.x;
+                float errY2 = v2 - kp2.pt.y;
+                float errX2_r = u2_r - kp2_ur;
+                if((errX2*errX2+errY2*errY2+errX2_r*errX2_r)>7.8*sigmaSquare2)
+                    continue;
+            }
 
-            float u2 = fx2*x2*invz2+cx2;
-            float v2 = fy2*y2*invz2+cy2;
-            float errX2 = u2 - kp2.pt.x;
-            float errY2 = v2 - kp2.pt.y;
-            if((errX2*errX2+errY2*errY2)>5.991*sigmaSquare2)
-                continue;
 
             //Check scale consistency
             cv::Mat normal1 = x3D-Ow1;

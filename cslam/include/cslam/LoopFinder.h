@@ -143,13 +143,6 @@ class LoopFinder {
   // Fix scale in the stereo/RGB-D case
   bool mbFixScale;
 
-  bool SendLoopClosureMsg();
-  fLoopSendFunc mLoopClosureSendFunc;
-  cv::Mat mRcm;
-  cv::Mat mTcm;
-
- public:
-  void SetLoopClosureSendFunc(fLoopSendFunc LoopClosureSendFunc);
 };
 
 }  // namespace cslam

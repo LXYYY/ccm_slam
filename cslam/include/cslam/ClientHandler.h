@@ -112,6 +112,8 @@ class ClientHandler : public boost::enable_shared_from_this<ClientHandler> {
   void CamImgCb(sensor_msgs::ImageConstPtr pMsg);
   void RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
                  const sensor_msgs::ImageConstPtr& msgD);
+  void StereoImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
+                 const sensor_msgs::ImageConstPtr& msgD);
   void Reset();
 
   //---Map Save/Load---
@@ -179,22 +181,10 @@ class ClientHandler : public boost::enable_shared_from_this<ClientHandler> {
       sync_pol;
   message_filters::Subscriber<sensor_msgs::Image>* rgb_subscriber_;
   message_filters::Subscriber<sensor_msgs::Image>* depth_subscriber_;
+  message_filters::Subscriber<sensor_msgs::Image>* left_subscriber_;
+  message_filters::Subscriber<sensor_msgs::Image>* right_subscriber_;
   message_filters::Synchronizer<sync_pol>* sync_;
 
-  ros::Time mCurrentFrameTime;
-  cv::Mat mCurrentPosition;
-
-  std::string map_frame_id_param_;
-  std::string camera_frame_id_param_;
-  ros::Timer tf_timer_;
-  tf::TransformBroadcaster tf_broadcaster_;
-  void PublishPositionAsTransformCallback(const ros::TimerEvent& event);
-  tf::Transform TransformFromMat(cv::Mat position_mat);
-
-  bool use_sim_time_ = true;
-
- public:
-  void SetLoopSendFunc(fLoopSendFunc LoopSendFunc);
 };
 
 }  // namespace cslam

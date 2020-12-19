@@ -8,3 +8,5 @@ cslam/thirdparty/g2o/lib/
 cslam/output/map_data
 cslam/output/saved_maps
 TaskLists.md
+compile_commands.json
+.cache

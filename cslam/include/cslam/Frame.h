@@ -77,8 +77,14 @@ class Frame : public boost::enable_shared_from_this<Frame> {
         extractorptr pExtractor, vocptr pVoc, cv::Mat& K, cv::Mat& distCoef,
         const float& bf, const float& thDepth, size_t ClientId);
 
+  // Constructor for stereo cameras.
+  Frame(const cv::Mat& imLeft, const cv::Mat& imRight, const double& timeStamp,
+        extractorptr  extractorLeft, extractorptr extractorRight,
+        vocptr  voc, cv::Mat& K, cv::Mat& distCoef, const float& bf,
+        const float& thDepth, size_t ClientId);
+
   // Extract ORB on the image.
-  void ExtractORB(const cv::Mat& im);
+  void ExtractORB(int flag, const cv::Mat& im);
 
   // Compute Bag of Words representation.
   void ComputeBoW();
@@ -108,6 +114,7 @@ class Frame : public boost::enable_shared_from_this<Frame> {
                                    const int maxLevel = -1) const;
 
   void ComputeStereoFromRGBD(const cv::Mat& imDepth);
+  void ComputeStereoMatches();
 
   cv::Mat UnprojectStereo(const int& i);
 
@@ -116,7 +123,7 @@ class Frame : public boost::enable_shared_from_this<Frame> {
   vocptr mpORBvocabulary;
 
   // Feature extractor. The right is used only in the stereo case.
-  extractorptr mpORBextractor;
+  extractorptr mpORBextractor, mpORBextractorRight;
 
   // Frame timestamp.
   double mTimeStamp;
@@ -160,7 +167,7 @@ class Frame : public boost::enable_shared_from_this<Frame> {
   DBoW2::FeatureVector mFeatVec;
 
   // ORB descriptor, each row associated to a keypoint.
-  cv::Mat mDescriptors;
+  cv::Mat mDescriptors, mDescriptorsRight;
 
   // MapPoints associated to keypoints, NULL pointer if no association.
   std::vector<mpptr> mvpMapPoints;

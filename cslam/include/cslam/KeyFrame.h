@@ -181,6 +181,7 @@ public:
 
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r) const;
+    cv::Mat UnprojectStereo(int i);
 
     // Image
     bool IsInImage(const float &x, const float &y) const;

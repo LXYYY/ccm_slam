@@ -87,7 +87,6 @@ void LoopFinder::Run() {
         bool bSim3 = ComputeSim3();
         if (bSim3) {
           // Perform loop fusion and pose graph optimization
-          SendLoopClosureMsg();
 
           // TODO(mikexyl): make enabling correct loop configurable
           // CorrectLoop();
@@ -341,8 +340,6 @@ bool LoopFinder::ComputeSim3() {
 
           mvpCurrentMatchedPoints = vpMapPointMatches;
 
-          mRcm = R;
-          mTcm = t;
           break;
         }
       }
@@ -1120,13 +1117,4 @@ void LoopFinder::RunGBA(idpair nLoopKF, set<idpair> sChangedKFs) {
 }
 //#endif
 
-bool LoopFinder::SendLoopClosureMsg() {
-  return mLoopClosureSendFunc(mpCurrentKF->mId.second, mpCurrentKF->mTimeStamp,
-                              mpMatchedKF->mId.second, mpMatchedKF->mTimeStamp,
-                              mRcm, mTcm);
-}
-
-void LoopFinder::SetLoopClosureSendFunc(fLoopSendFunc LoopClosureSendFunc) {
-  mLoopClosureSendFunc = LoopClosureSendFunc;
-}
 }  // namespace cslam

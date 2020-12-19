@@ -89,7 +89,6 @@ void MapMatcher::Run() {
       if (bDetect) {
         bool bSim3 = ComputeSim3();
         if (bSim3) {
-          SendMapFusionMsg();
           // Perform loop fusion and pose graph optimization
           // TODO(mikexyl): make enabling correct loop configurable
           //   CorrectLoop();
@@ -343,8 +342,6 @@ bool MapMatcher::ComputeSim3() {
 
           mvpCurrentMatchedPoints = vpMapPointMatches;
 
-          mRcm = R;
-          mTcm = t;
           break;
         }
       }
@@ -542,13 +539,4 @@ bool MapMatcher::CheckKfQueue() {
   return (!mlKfInQueue.empty());
 }
 
-bool MapMatcher::SendMapFusionMsg() {
-  return mMapFusionSendFunc(mpCurrentKF->mId.second, mpCurrentKF->mTimeStamp,
-                            mpMatchedKF->mId.second, mpMatchedKF->mTimeStamp,
-                            mRcm, mTcm);
-}
-
-void MapMatcher::SetMapFusionSendFunc(fLoopSendFunc MapFusionSendFunc) {
-  mMapFusionSendFunc = MapFusionSendFunc;
-}
 }  // namespace cslam

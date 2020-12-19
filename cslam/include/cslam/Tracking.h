@@ -94,6 +94,8 @@ class Tracking : public boost::enable_shared_from_this<Tracking> {
   cv::Mat GrabImageMonocular(const cv::Mat& im, const double& timestamp);
   cv::Mat GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
                         const double& timestamp);
+  cv::Mat GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat& imRectRight,
+                        const double& timestamp);
 
   // Pointer Setters
   void SetLocalMapper(mappingptr pLocalMapper) { mpLocalMapper = pLocalMapper; }
@@ -178,6 +180,7 @@ class Tracking : public boost::enable_shared_from_this<Tracking> {
 
   // ORB
   extractorptr mpORBextractor;
+  extractorptr mpORBextractorRight;
   extractorptr mpIniORBextractor;
 
   // Initalization (only for monocular)

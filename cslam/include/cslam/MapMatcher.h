@@ -162,13 +162,6 @@ class MapMatcher : public boost::enable_shared_from_this<MapMatcher> {
   // false
   bool mbFixScale;
 
-  bool SendMapFusionMsg();
-  fLoopSendFunc mMapFusionSendFunc;
-  cv::Mat mRcm;
-  cv::Mat mTcm;
-
- public:
-  void SetMapFusionSendFunc(fLoopSendFunc MapFusionSendFunc);
 };
 
 }  // namespace cslam

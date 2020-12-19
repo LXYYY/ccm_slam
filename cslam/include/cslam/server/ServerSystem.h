@@ -117,14 +117,6 @@ class ServerSystem {
   threadptr mptLogger;
 #endif
 
- public:
-  void SetLoopSendFunc(fLoopSendFunc LoopSendFunc) {
-    mpMapMatcher->SetMapFusionSendFunc(LoopSendFunc);
-    if (mpClient0 != nullptr) mpClient0->SetLoopSendFunc(LoopSendFunc);
-    if (mpClient1 != nullptr) mpClient1->SetLoopSendFunc(LoopSendFunc);
-    if (mpClient2 != nullptr) mpClient2->SetLoopSendFunc(LoopSendFunc);
-    if (mpClient3 != nullptr) mpClient3->SetLoopSendFunc(LoopSendFunc);
-  }
 };
 
 }  // namespace cslam

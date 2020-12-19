@@ -425,7 +425,10 @@ void MapPoint::AddObservation(kfptr pKF, size_t idx, bool bLock)
 
     mObservations[pKF]=idx;
 
-    nObs++;
+    if(pKF->mvuRight[idx]>=0)
+        nObs+=2;
+    else
+        nObs++;
 
     if(mSysState == eSystemState::CLIENT)
     {
@@ -449,7 +452,11 @@ void MapPoint::EraseObservation(kfptr pKF, bool bLock, bool bSuppressMapAction)
         unique_lock<mutex> lock(mMutexFeatures);
         if(mObservations.count(pKF))
         {
-            nObs--;
+            int idx = mObservations[pKF];
+            if(pKF->mvuRight[idx]>=0)
+                nObs-=2;
+            else
+                nObs--;
 
             mObservations.erase(pKF);
 

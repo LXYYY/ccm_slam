@@ -62,7 +62,7 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
   if (sensor == "Monocular")
     mSensor = eSensor::MONOCULAR;
   else if (sensor == "Stereo")
-    std::runtime_error("Stereo not implemented yet");
+    mSensor = eSensor::STEREO;
   else if (sensor == "RGBD")
     mSensor = eSensor::RGBD;
 
@@ -84,21 +84,20 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
           sync_pol(10), *rgb_subscriber_, *depth_subscriber_);
       sync_->registerCallback(
           boost::bind(&ClientHandler::RGBDImgCb, this, _1, _2));
+    } else if (mSensor == eSensor::STEREO) {
+      std::string RightTopicName;
+      mNhPrivate.param("RightTopicName", RightTopicName, string("nospec"));
+      left_subscriber_ = new message_filters::Subscriber<sensor_msgs::Image>(
+          mNh, TopicNameCamSub, 1);
+      right_subscriber_ = new message_filters::Subscriber<sensor_msgs::Image>(
+          mNh, RightTopicName, 1);
+      sync_ = new message_filters::Synchronizer<sync_pol>(
+          sync_pol(10), *left_subscriber_, *right_subscriber_);
+      sync_->registerCallback(
+          boost::bind(&ClientHandler::StereoImgCb, this, _1, _2));
     }
     cout << "Camera Input topic: " << TopicNameCamSub << endl;
-
-    mNhPrivate.param<std::string>("map_frame_id", map_frame_id_param_, "map");
-    mNhPrivate.param<std::string>("camera_frame_id", camera_frame_id_param_,
-                                  "camera_link");
-    tf_timer_ = mNh.createTimer(
-        ros::Duration(0.01), &ClientHandler::PublishPositionAsTransformCallback,
-        this);
   }
-
-  mNh.param<bool>("use_sim_time", use_sim_time_, use_sim_time_);
-  cout << "Use sim time? "
-       << static_cast<std::string>(use_sim_time_ ? "enabled" : "disabled")
-       << endl;
 }
 
 #ifdef LOGGING
@@ -337,9 +336,7 @@ void ClientHandler::CamImgCb(sensor_msgs::ImageConstPtr pMsg) {
     }
   }
 
-  mCurrentFrameTime = pMsg->header.stamp;
-  mCurrentPosition =
-      mpTracking->GrabImageMonocular(cv_ptr->image, mCurrentFrameTime.toSec());
+  mpTracking->GrabImageMonocular(cv_ptr->image, cv_ptr->header.stamp.toSec());
 }
 
 void ClientHandler::RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
@@ -370,9 +367,31 @@ void ClientHandler::RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
     }
   }
 
-  mCurrentFrameTime = msgRGB->header.stamp;
-  mCurrentPosition = mpTracking->GrabImageRGBD(cv_ptrRGB->image, cv_ptrD->image,
-                                               mCurrentFrameTime.toSec());
+  mpTracking->GrabImageRGBD(cv_ptrRGB->image, cv_ptrD->image,
+                            cv_ptrRGB->header.stamp.toSec());
+}
+
+void ClientHandler::StereoImgCb(const sensor_msgs::ImageConstPtr& msgLeft,
+                                const sensor_msgs::ImageConstPtr& msgRight) {
+  // Copy the ros image message to cv::Mat.
+  cv_bridge::CvImageConstPtr cv_ptrLeft;
+  try {
+    cv_ptrLeft = cv_bridge::toCvShare(msgLeft);
+  } catch (cv_bridge::Exception& e) {
+    ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
+  }
+
+  cv_bridge::CvImageConstPtr cv_ptrRight;
+  try {
+    cv_ptrRight = cv_bridge::toCvShare(msgRight);
+  } catch (cv_bridge::Exception& e) {
+    ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
+  }
+
+  mpTracking->GrabImageStereo(cv_ptrLeft->image, cv_ptrRight->image,
+                              cv_ptrLeft->header.stamp.toSec());
 }
 
 void ClientHandler::LoadMap(const std::string& path_name) {
@@ -439,56 +458,4 @@ void ClientHandler::ClearCovGraph(size_t MapId) {
 //}
 //#endif
 
-void ClientHandler::PublishPositionAsTransformCallback(
-    const ros::TimerEvent& event) {
-  if (!mCurrentPosition.empty()) {
-    tf::Transform transform = TransformFromMat(mCurrentPosition);
-    tf_broadcaster_.sendTransform(
-        tf::StampedTransform(transform, mCurrentFrameTime, map_frame_id_param_,
-                             camera_frame_id_param_));
-  }
-}
-
-tf::Transform ClientHandler::TransformFromMat(cv::Mat position_mat) {
-  cv::Mat rotation(3, 3, CV_32F);
-  cv::Mat translation(3, 1, CV_32F);
-
-  rotation = position_mat.rowRange(0, 3).colRange(0, 3);
-  translation = position_mat.rowRange(0, 3).col(3);
-
-  tf::Matrix3x3 tf_camera_rotation(
-      rotation.at<float>(0, 0), rotation.at<float>(0, 1),
-      rotation.at<float>(0, 2), rotation.at<float>(1, 0),
-      rotation.at<float>(1, 1), rotation.at<float>(1, 2),
-      rotation.at<float>(2, 0), rotation.at<float>(2, 1),
-      rotation.at<float>(2, 2));
-
-  tf::Vector3 tf_camera_translation(translation.at<float>(0),
-                                    translation.at<float>(1),
-                                    translation.at<float>(2));
-
-  // Coordinate transformation matrix from orb coordinate system to ros
-  // coordinate system
-  const tf::Matrix3x3 tf_orb_to_ros(0, 0, 1, -1, 0, 0, 0, -1, 0);
-
-  // Transform from orb coordinate system to ros coordinate system on camera
-  // coordinates
-  tf_camera_rotation = tf_orb_to_ros * tf_camera_rotation;
-  tf_camera_translation = tf_orb_to_ros * tf_camera_translation;
-
-  // Inverse matrix
-  tf_camera_rotation = tf_camera_rotation.transpose();
-  tf_camera_translation = -(tf_camera_rotation * tf_camera_translation);
-
-  // Transform from orb coordinate system to ros coordinate system on map
-  // coordinates
-  tf_camera_rotation = tf_orb_to_ros * tf_camera_rotation;
-  tf_camera_translation = tf_orb_to_ros * tf_camera_translation;
-
-  return tf::Transform(tf_camera_rotation, tf_camera_translation);
-}
-
-void ClientHandler::SetLoopSendFunc(fLoopSendFunc LoopSendFunc) {
-  mpLoopFinder->SetLoopClosureSendFunc(LoopSendFunc);
-}
 }  // namespace cslam

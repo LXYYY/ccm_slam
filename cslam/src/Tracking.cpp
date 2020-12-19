@@ -86,6 +86,11 @@ Tracking::Tracking(ccptr pCC, vocptr pVoc, viewptr pFrameViewer, mapptr pMap,
 
   mpORBextractor.reset(new ORBextractor(nFeatures, fScaleFactor, nLevels,
                                         iIniThFAST, iMinThFAST));
+
+  if (sensor == eSensor::STEREO)
+    mpORBextractorRight.reset(new ORBextractor(nFeatures, fScaleFactor, nLevels,
+                                               iIniThFAST, iMinThFAST));
+
   if (sensor == eSensor::MONOCULAR)
     mpIniORBextractor.reset(new ORBextractor(2 * nFeatures, fScaleFactor,
                                              nLevels, iIniThFAST, iMinThFAST));
@@ -175,6 +180,39 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
   mCurrentFrame.reset(new Frame(mImGray, imDepth, timestamp, mpORBextractor,
                                 mpORBVocabulary, mK, mDistCoef, mbf, mThDepth,
                                 mClientId));
+
+  Track();
+
+  return mCurrentFrame->mTcw.clone();
+}
+
+cv::Mat Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
+                                  const cv::Mat& imRectRight,
+                                  const double& timestamp) {
+  mImGray = imRectLeft;
+  cv::Mat imGrayRight = imRectRight;
+
+  if (mImGray.channels() == 3) {
+    if (mbRGB) {
+      cvtColor(mImGray, mImGray, CV_RGB2GRAY);
+      cvtColor(imGrayRight, imGrayRight, CV_RGB2GRAY);
+    } else {
+      cvtColor(mImGray, mImGray, CV_BGR2GRAY);
+      cvtColor(imGrayRight, imGrayRight, CV_BGR2GRAY);
+    }
+  } else if (mImGray.channels() == 4) {
+    if (mbRGB) {
+      cvtColor(mImGray, mImGray, CV_RGBA2GRAY);
+      cvtColor(imGrayRight, imGrayRight, CV_RGBA2GRAY);
+    } else {
+      cvtColor(mImGray, mImGray, CV_BGRA2GRAY);
+      cvtColor(imGrayRight, imGrayRight, CV_BGRA2GRAY);
+    }
+  }
+
+  mCurrentFrame.reset(new Frame(mImGray, imGrayRight, timestamp, mpORBextractor,
+                                mpORBextractorRight, mpORBVocabulary, mK,
+                                mDistCoef, mbf, mThDepth, mClientId));
 
   Track();
 
