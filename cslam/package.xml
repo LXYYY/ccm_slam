@@ -21,7 +21,7 @@
   <build_depend>glog_catkin</build_depend>
   <build_depend>g2o_catkin</build_depend>
   <build_depend>dbow2_catkin</build_depend>
-  <build_depend>voxgraph_msgs</build_depend>
+  <build_depend>coxgraph_mod</build_depend>
 
   <run_depend>cmake_modules</run_depend>
   <run_depend>ccmslam_msgs</run_depend>
@@ -35,6 +35,7 @@
   <run_depend>g2o_catkin</run_depend>
   <run_depend>dbow2_catkin</run_depend>
   <run_depend>voxgraph_msgs</run_depend>
+  <run_depend>coxgraph_mod</run_depend>
 
   <export>
   </export>

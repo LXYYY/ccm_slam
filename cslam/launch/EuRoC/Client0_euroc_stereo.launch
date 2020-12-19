@@ -24,6 +24,7 @@
       <param name="~MapInTopicName" type="string" value="MapOutServer0" unless="$(arg dist)" />
       <param name="~MapInTopicName" type="string" value="MapOutServer0Disturbed" if="$(arg dist)" />
 
+      <param name="server_mode" value="false"/>
     </node>
 
   </group>
