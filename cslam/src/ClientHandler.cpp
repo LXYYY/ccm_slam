@@ -436,8 +436,16 @@ void ClientHandler::StereoImgCb(const sensor_msgs::ImageConstPtr& msgLeft,
     return;
   }
 
-  mpTracking->GrabImageStereo(cv_ptrLeft->image, cv_ptrRight->image,
-                              cv_ptrLeft->header.stamp.toSec());
+  if (mbDoRectify) {
+    cv::Mat imLeft, imRight;
+    cv::remap(cv_ptrLeft->image, imLeft, mM1l, mM2l, cv::INTER_LINEAR);
+    cv::remap(cv_ptrRight->image, imRight, mM1r, mM2r, cv::INTER_LINEAR);
+    mpTracking->GrabImageStereo(imLeft, imRight,
+                                cv_ptrLeft->header.stamp.toSec());
+  } else {
+    mpTracking->GrabImageStereo(cv_ptrLeft->image, cv_ptrRight->image,
+                                cv_ptrLeft->header.stamp.toSec());
+  }
 }
 
 void ClientHandler::LoadMap(const std::string& path_name) {
