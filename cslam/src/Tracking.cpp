@@ -74,7 +74,7 @@ Tracking::Tracking(ccptr pCC, vocptr pVoc, viewptr pFrameViewer, mapptr pMap,
   int nRGB = fSettings["Camera.RGB"];
   mbRGB = nRGB;
 
-  mbf = fSettings["Baseline"];
+  mbf = fSettings["Camera.bf"];
   mThDepth = fSettings["ThDepth"];
   mDepthMapFactor = fSettings["DepthFactor"];
 
@@ -220,6 +220,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
 }
 
 void Tracking::Track() {
+LOG(ERROR)<<mpMap->MapPointsInMap();
   if (mState == NO_IMAGES_YET) {
     mState = NOT_INITIALIZED;
   }
@@ -273,7 +274,10 @@ void Tracking::Track() {
       } else {
         bOK = TrackWithMotionModel();
         if (!bOK) {
+          LOG(ERROR) << "Track failed here";
+
           bOK = TrackReferenceKeyFrame();
+          if (!bOK) LOG(ERROR) << "Track failed here";
         }
       }
     } else {
@@ -595,6 +599,7 @@ bool Tracking::TrackReferenceKeyFrame() {
   mCurrentFrame->mvpMapPoints = vpMapPointMatches;
   mCurrentFrame->SetPose(mLastFrame->mTcw);
 
+LOG(ERROR)<<"PoseOptimizationClient";
   Optimizer::PoseOptimizationClient(*mCurrentFrame);
 
   // Discard outliers
@@ -659,6 +664,7 @@ bool Tracking::TrackWithMotionModel() {
     return false;
 
   // Optimize frame pose with all matches
+LOG(ERROR)<<"PoseOptimizationClient";
   Optimizer::PoseOptimizationClient(*mCurrentFrame);
 
   // Discard outliers
@@ -691,6 +697,7 @@ bool Tracking::TrackLocalMap() {
 
   SearchLocalPoints();
 
+LOG(ERROR)<<"PoseOptimizationClient";
   // Optimize Pose
   Optimizer::PoseOptimizationClient(*mCurrentFrame);
   mnMatchesInliers = 0;
@@ -701,9 +708,9 @@ bool Tracking::TrackLocalMap() {
       if (!mCurrentFrame->mvbOutlier[i]) {
         mCurrentFrame->mvpMapPoints[i]->IncreaseFound();
         mnMatchesInliers++;
-      }
-    } else if (mSensor == eSensor::STEREO)
-      mCurrentFrame->mvpMapPoints[i] = nullptr;
+      } else if (mSensor == eSensor::STEREO)
+        mCurrentFrame->mvpMapPoints[i] = nullptr;
+    }
   }
 
   // Decide if the tracking was succesful
@@ -711,12 +718,12 @@ bool Tracking::TrackLocalMap() {
   if (mCurrentFrame->mId.first <
           mLastRelocFrameId.first + params::tracking::miMaxFrames &&
       mnMatchesInliers < 50) {
-    LOG(INFO) << "Track failed here";
+    LOG(ERROR) << "Track failed here";
     return false;
   }
 
   if (mnMatchesInliers < params::tracking::miTrackLocalMapInlierThres) {  // 30
-    LOG(INFO) << "Track failed here";
+    LOG(ERROR) << "Track failed here";
     return false;
   } else
     return true;
@@ -784,8 +791,7 @@ bool Tracking::NeedNewKeyFrame() {
   // Condition 2: Few tracked points compared to reference keyframe. Lots of
   // visual odometry compared to map matches.
   const bool c2 =
-      ((mnMatchesInliers < nRefMatches * params::tracking::mfThRefRatio ||
-        bNeedToInsertClose) &&
+      ((mnMatchesInliers < nRefMatches * thRefRatio || bNeedToInsertClose) &&
        mnMatchesInliers > params::tracking::miMatchesInliersThres);
 
   if ((c1a || c1b || c1c) && c2) {

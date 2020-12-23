@@ -26,12 +26,12 @@
 
 namespace cslam {
 
-LocalMapping::LocalMapping(ccptr pCC, mapptr pMap, dbptr pDB, viewptr pViewer = nullptr)
+LocalMapping::LocalMapping(ccptr pCC, mapptr pMap, dbptr pDB, const bool bMonocular, viewptr pViewer = nullptr)
     : mpCC(pCC),mpKFDB(pDB),
       mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
       mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true),
       mClientId(pCC->mClientId),
-      mpViewer(pViewer)
+      mpViewer(pViewer), mbMonocular(bMonocular)
 {
     mAddedKfs = 0;
     mCulledKfs = 0;
@@ -79,17 +79,19 @@ void LocalMapping::RunClient()
             mbAbortBA = false;
 
             //Map Forgetting
-            while(!mpMap->LockMapUpdate()){usleep(params::timings::miLockSleep);}
+            // while(!mpMap->LockMapUpdate()){usleep(params::timings::miLockSleep);}
 
-            mpMap->MapTrimming(mpCurrentKeyFrame);
+            // //mpMap->MapTrimming(mpCurrentKeyFrame);
 
-            mpMap->UnLockMapUpdate();
+            // mpMap->UnLockMapUpdate();
 
             if(!CheckNewKeyFrames() && !stopRequested())
             {
                 // Local BA
                 if(mpMap->KeyFramesInMap()>2)
                     Optimizer::LocalBundleAdjustmentClient(mpCurrentKeyFrame,&mbAbortBA,mpMap,mClientId);
+
+                KeyFrameCullingClient();
             }
 
             if(params::sys::mbStrictLock)
@@ -284,7 +286,9 @@ void LocalMapping::ProcessNewKeyFrame()
 void LocalMapping::CreateNewMapPoints()
 {
     // Retrieve neighbor keyframes in covisibility graph
-    int nn=20;
+    int nn = 10;
+    if(mbMonocular)
+        nn=20;
     const vector<kfptr> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
     ORBmatcher matcher(0.6,false);
@@ -321,18 +325,26 @@ void LocalMapping::CreateNewMapPoints()
         cv::Mat vBaseline = Ow2-Ow1;
         const float baseline = cv::norm(vBaseline);
 
+        if(!mbMonocular)
+        {
+            if(baseline<pKF2->mb)
+            continue;
+        }
+        else
+        {
         const float medianDepthKF2 = pKF2->ComputeSceneMedianDepth(2);
         const float ratioBaselineDepth = baseline/medianDepthKF2;
 
         if(ratioBaselineDepth<0.01)
             continue;
+        }
 
         // Compute Fundamental Matrix
         cv::Mat F12 = ComputeF12(mpCurrentKeyFrame,pKF2);
 
         // Search matches that fullfil epipolar constraint
         vector<pair<size_t,size_t> > vMatchedIndices;
-        matcher.SearchForTriangulation(mpCurrentKeyFrame,pKF2,F12,vMatchedIndices);
+        matcher.SearchForTriangulation(mpCurrentKeyFrame,pKF2,F12,vMatchedIndices,false);
 
         cv::Mat Rcw2 = pKF2->GetRotation();
         cv::Mat Rwc2 = Rcw2.t();
@@ -518,7 +530,9 @@ void LocalMapping::CreateNewMapPoints()
 void LocalMapping::SearchInNeighbors()
 {
     // Retrieve neighbor keyframes
-    int nn=20;
+    int nn = 10;
+    if(mbMonocular)
+        nn=20;
     const vector<kfptr> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
     vector<kfptr> vpTargetKFs;
     for(vector<kfptr>::const_iterator vit=vpNeighKFs.begin(), vend=vpNeighKFs.end(); vit!=vend; vit++)
@@ -681,6 +695,72 @@ void LocalMapping::InterruptBA()
     mbAbortBA = true;
 }
 
+void LocalMapping::KeyFrameCullingClient()
+{
+    // Check redundant keyframes (only local keyframes)
+    // A keyframe is considered redundant if the 90% of the MapPoints it sees, are seen
+    // in at least other 3 keyframes (in the same or finer scale)
+    // We only consider close stereo points
+    vector<kfptr> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
+
+    for(vector<kfptr>::iterator vit=vpLocalKeyFrames.begin(), vend=vpLocalKeyFrames.end(); vit!=vend; vit++)
+    {
+        kfptr pKF = *vit;
+        if(pKF->mId.first==0)
+            continue;
+        const vector<mpptr> vpMapPoints = pKF->GetMapPointMatches();
+
+        int nObs = 3;
+        const int thObs=nObs;
+        int nRedundantObservations=0;
+        int nMPs=0;
+        for(size_t i=0, iend=vpMapPoints.size(); i<iend; i++)
+        {
+            mpptr pMP = vpMapPoints[i];
+            if(pMP)
+            {
+                if(!pMP->isBad())
+                {
+                    if(!mbMonocular)
+                    {
+                        if(pKF->mvDepth[i]>pKF->mThDepth || pKF->mvDepth[i]<0)
+                            continue;
+                    }
+
+                    nMPs++;
+                    if(pMP->Observations()>thObs)
+                    {
+                        const int &scaleLevel = pKF->mvKeysUn[i].octave;
+                        const map<kfptr, size_t> observations = pMP->GetObservations();
+                        int nObs=0;
+                        for(map<kfptr, size_t>::const_iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
+                        {
+                            kfptr pKFi = mit->first;
+                            if(pKFi==pKF)
+                                continue;
+                            const int &scaleLeveli = pKFi->mvKeysUn[mit->second].octave;
+
+                            if(scaleLeveli<=scaleLevel+1)
+                            {
+                                nObs++;
+                                if(nObs>=thObs)
+                                    break;
+                            }
+                        }
+                        if(nObs>=thObs)
+                        {
+                            nRedundantObservations++;
+                        }
+                    }
+                }
+            }
+        }  
+
+        if(nRedundantObservations>0.9*nMPs)
+            pKF->SetBadFlag();
+    }
+}
+
 void LocalMapping::RequestReset()
 {
     {
@@ -755,7 +835,10 @@ void LocalMapping::MapPointCullingClient()
     const idpair nCurrentKFid = mpCurrentKeyFrame->mId;
 
     int nThObs;
-    nThObs = 3;
+    if(mbMonocular)
+        nThObs = 2;
+    else
+        nThObs = 3;
     const int cnThObs = nThObs;
 
     while(lit!=mlpRecentAddedMapPoints.end())
@@ -868,7 +951,14 @@ void LocalMapping::KeyFrameCullingV3()
             if(pMP)
             {
                 if(!pMP->isBad())
-                {
+                { 
+                                       if(!mbMonocular)
+                    {
+                        if(pKF->mvDepth[i]>pKF->mThDepth || pKF->mvDepth[i]<0)
+                            continue;
+                    }
+
+
                     nMPs++;
                     if(pMP->Observations()>thObs)
                     {

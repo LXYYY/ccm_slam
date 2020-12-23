@@ -30,7 +30,7 @@ Timing.Server.PlaceRecRate: 5000
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 1000
+ORBextractor.nFeatures: 1200
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
 ORBextractor.scaleFactor: 1.2
@@ -70,8 +70,8 @@ Tracking.TrackLocalMapInlierThres: 30
 # Mapping Parameters
 #--------------------------------------------------------------------------------------------
 
-Mapping.LocalMapSize: 50
-Mapping.LocalMapBuffer: 200
+Mapping.LocalMapSize: 200
+Mapping.LocalMapBuffer: 500
 Mapping.RecentKFWindow: 20
 Mapping.RedThres: 0.98
 

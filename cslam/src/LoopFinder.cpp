@@ -28,8 +28,6 @@
 
 namespace cslam {
 
-static coxgraph::mod::VIOInterface cg_vio_interface;
-
 LoopFinder::LoopFinder(ccptr pCC, dbptr pDB, vocptr pVoc, mapptr pMap,
                        bool bFixScale)
     : mpCC(pCC),
@@ -344,7 +342,7 @@ bool LoopFinder::ComputeSim3() {
 
           mvpCurrentMatchedPoints = vpMapPointMatches;
 
-          cg_vio_interface.publishLoopClosure(
+          coxgraph::mod::publishLoopClosure(
               mpCurrentKF->mId.second, mpCurrentKF->mTimeStamp, pKF->mId.second,
               pKF->mTimeStamp, R, t);
           break;

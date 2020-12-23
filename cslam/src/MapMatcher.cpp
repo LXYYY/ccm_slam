@@ -24,6 +24,8 @@
 
 #include <cslam/MapMatcher.h>
 
+#include <coxgraph_mod/vio_interface.h>
+
 namespace cslam {
 
 MapMatcher::MapMatcher(ros::NodeHandle Nh, ros::NodeHandle NhPrivate, dbptr pDB,
@@ -341,6 +343,10 @@ bool MapMatcher::ComputeSim3() {
           mScw = Converter::toCvMat(mg2oScw);
 
           mvpCurrentMatchedPoints = vpMapPointMatches;
+
+          coxgraph::mod::publishLoopClosure(
+              mpCurrentKF->mId.second, mpCurrentKF->mTimeStamp, pKF->mId.second,
+              pKF->mTimeStamp, R, t);
 
           break;
         }
