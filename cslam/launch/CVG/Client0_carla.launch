@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<launch>
+        <param name="use_sim_time" value="false" />
+        <arg name="dist" default="0" />
+        <arg name="cam" default="$(find ccmslam)/conf/caminfo_carla.yaml" />
+
+        <arg name="rgb_topic" default="/carla/vehicle/109/camera/rgb/front/image_color" />
+        <arg name="depth_topic" default="/carla/vehicle/109/camera/depth/front/image_depth" />
+
+        <arg name="rosbag_path" default="/home/lxy/Datasets/carla/2021-02-19-03-44-13.bag" />
+
+        <group ns="ccmslam">
+
+                <node pkg="tf" type="static_transform_publisher" name="linkC0_broadcaster" args="-100 300 5 -1.571 0 -2 world odomC0 100" />
+
+                <arg name="debug_client" default="false" />
+                <arg unless="$(arg debug_client)" name="launch_prefix_client" value=" " />
+                <arg if="$(arg debug_client)" name="launch_prefix_client" value="xterm -e gdb --args" />
+
+                <node pkg="ccmslam" type="ccmslamClientNode" name="ccmslamClientNode0" args="$(find ccmslam)/conf/ORBvoc.txt $(arg cam)" output="screen" launch-prefix="$(arg launch_prefix_client)">
+
+                        <!-- ++++++++++++++++++++++++++++++++++++++++++++++ -->
+                        <!-- Agent Specific Params - !!!MUST BE ADJUSTED!!! -->
+
+                        <param name="~Sensor" type="string" value="RGBD" />
+                        <param name="~FrameId" type="string" value="odomC0" />
+                        <param name="~ClientId" type="int" value="0" />
+
+                        <param name="~map_frame_id" type="string" value="odom_0" />
+                        <param name="~camera_frame_id" type="string" value="robot_base_0" />
+                        <param name="~TopicNameCamSub" type="string" value="$(arg rgb_topic)" />
+                        <param name="~DepthTopicName" type="string" value="$(arg depth_topic)" />
+
+                        <param name="~MapInTopicName" type="string" value="MapOutServer0" unless="$(arg dist)" />
+                        <param name="~MapInTopicName" type="string" value="MapOutServer0Disturbed" if="$(arg dist)" />
+
+                </node>
+
+        </group>
+
+        <arg name="rosbag_skip_first_n_sec" default="0" doc="Skip the first n seconds of the rosbag." />
+        <node name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -q -s $(arg rosbag_skip_first_n_sec) $(arg rosbag_path)" />
+
+</launch>
