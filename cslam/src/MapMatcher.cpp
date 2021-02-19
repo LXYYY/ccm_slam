@@ -93,7 +93,7 @@ void MapMatcher::Run() {
         if (bSim3) {
           // Perform loop fusion and pose graph optimization
           // TODO(mikexyl): make enabling correct loop configurable
-          //   CorrectLoop();
+          CorrectLoop();
         }
       }
     }
@@ -344,9 +344,9 @@ bool MapMatcher::ComputeSim3() {
 
           mvpCurrentMatchedPoints = vpMapPointMatches;
 
-          coxgraph::mod::publishLoopClosure(
-              mpCurrentKF->mId.second, mpCurrentKF->mTimeStamp, pKF->mId.second,
-              pKF->mTimeStamp, R, t);
+          //  coxgraph::mod::publishLoopClosure(
+          //      mpCurrentKF->mId.second, mpCurrentKF->mTimeStamp,
+          //      pKF->mId.second, pKF->mTimeStamp, R, t);
 
           break;
         }

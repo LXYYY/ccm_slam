@@ -220,7 +220,6 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
 }
 
 void Tracking::Track() {
-LOG(ERROR)<<mpMap->MapPointsInMap();
   if (mState == NO_IMAGES_YET) {
     mState = NOT_INITIALIZED;
   }
@@ -599,7 +598,6 @@ bool Tracking::TrackReferenceKeyFrame() {
   mCurrentFrame->mvpMapPoints = vpMapPointMatches;
   mCurrentFrame->SetPose(mLastFrame->mTcw);
 
-LOG(ERROR)<<"PoseOptimizationClient";
   Optimizer::PoseOptimizationClient(*mCurrentFrame);
 
   // Discard outliers
@@ -664,7 +662,6 @@ bool Tracking::TrackWithMotionModel() {
     return false;
 
   // Optimize frame pose with all matches
-LOG(ERROR)<<"PoseOptimizationClient";
   Optimizer::PoseOptimizationClient(*mCurrentFrame);
 
   // Discard outliers
@@ -697,7 +694,6 @@ bool Tracking::TrackLocalMap() {
 
   SearchLocalPoints();
 
-LOG(ERROR)<<"PoseOptimizationClient";
   // Optimize Pose
   Optimizer::PoseOptimizationClient(*mCurrentFrame);
   mnMatchesInliers = 0;

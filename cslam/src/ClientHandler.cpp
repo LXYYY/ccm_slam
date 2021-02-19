@@ -22,7 +22,6 @@
  * along with CCM-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <coxgraph_mod/vio_interface.h>
 #include <cslam/ClientHandler.h>
 #include <glog/logging.h>
 
@@ -47,7 +46,8 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
       mpViewer(pViewer),
       mbReset(false),
       mbLoadedMap(bLoadMap),
-      mbDoRectify(true) {
+      mbDoRectify(true),
+      vio_interface_(Nh, NhPrivate) {
   if (mpVoc == nullptr || mpKFDB == nullptr || mpMap == nullptr ||
       (mpUID == nullptr && mSysState == eSystemState::SERVER)) {
     cout << ("In \" ClientHandler::ClientHandler(...)\": nullptr exception")
@@ -247,7 +247,8 @@ void ClientHandler::InitializeClient() {
   mpViewer.reset(new Viewer(mpMap, mpCC));
   usleep(10000);
   //+++++ Initialize the Local Mapping thread +++++
-  mpMapping.reset(new LocalMapping(mpCC, mpMap, mpKFDB, mSensor==eSensor::MONOCULAR, mpViewer));
+  mpMapping.reset(new LocalMapping(mpCC, mpMap, mpKFDB,
+                                   mSensor == eSensor::MONOCULAR, mpViewer));
   usleep(10000);
   //    +++++ Initialize the communication thread +++++
   mpComm.reset(new Communicator(mpCC, mpVoc, mpMap, mpKFDB));
@@ -284,7 +285,8 @@ void ClientHandler::InitializeServer(bool bLoadMap) {
   mptLoopClosure.reset(new thread(&LoopFinder::Run, mpLoopFinder));
   usleep(10000);
   //+++++ Initialize the Local Mapping thread +++++
-  mpMapping.reset(new LocalMapping(mpCC, mpMap, mpKFDB, mSensor==eSensor::MONOCULAR, mpViewer));
+  mpMapping.reset(new LocalMapping(mpCC, mpMap, mpKFDB,
+                                   mSensor == eSensor::MONOCULAR, mpViewer));
   mpMapping->SetLoopFinder(mpLoopFinder);  // tempout
   usleep(10000);
   //+++++ Initialize the communication thread +++++
@@ -383,9 +385,7 @@ void ClientHandler::CamImgCb(sensor_msgs::ImageConstPtr pMsg) {
     }
   }
 
-  coxgraph::mod::updatePose(mpTracking->GrabImageMonocular(
-                                cv_ptr->image, cv_ptr->header.stamp.toSec()),
-                            cv_ptr->header.stamp.toSec());
+  mpTracking->GrabImageMonocular(cv_ptr->image, cv_ptr->header.stamp.toSec());
 }
 
 void ClientHandler::RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
@@ -416,7 +416,7 @@ void ClientHandler::RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
     }
   }
 
-  coxgraph::mod::updatePose(
+  vio_interface_.updatePose(
       mpTracking->GrabImageRGBD(cv_ptrRGB->image, cv_ptrD->image,
                                 cv_ptrRGB->header.stamp.toSec()),
       cv_ptrRGB->header.stamp.toSec());
@@ -445,16 +445,12 @@ void ClientHandler::StereoImgCb(const sensor_msgs::ImageConstPtr& msgLeft,
     cv::Mat imLeft, imRight;
     cv::remap(cv_ptrLeft->image, imLeft, mM1l, mM2l, cv::INTER_LINEAR);
     cv::remap(cv_ptrRight->image, imRight, mM1r, mM2r, cv::INTER_LINEAR);
-    coxgraph::mod::updatePose(
-        mpTracking->GrabImageStereo(imLeft, imRight,
-                                    cv_ptrLeft->header.stamp.toSec()),
-        cv_ptrLeft->header.stamp.toSec());
+    mpTracking->GrabImageStereo(imLeft, imRight,
+                                cv_ptrLeft->header.stamp.toSec());
 
   } else {
-    coxgraph::mod::updatePose(
-        mpTracking->GrabImageStereo(cv_ptrLeft->image, cv_ptrRight->image,
-                                    cv_ptrLeft->header.stamp.toSec()),
-        cv_ptrLeft->header.stamp.toSec());
+    mpTracking->GrabImageStereo(cv_ptrLeft->image, cv_ptrRight->image,
+                                cv_ptrLeft->header.stamp.toSec());
   }
 }
 
