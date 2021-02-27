@@ -2,7 +2,7 @@
 <launch>
 
   <arg name="dist" default="0"/>
-  <arg name="debug" default="true" />
+  <arg name="debug" default="false" />
   <arg name="sensor_type" default="RGBD"/>
 
   <!-- -start disturber before group ns -->
@@ -57,6 +57,7 @@
       <param name="~MapInTopicName3" type="string" value="MapOutClient3Disturbed" if="$(arg dist)" />
 
       <param name="server_mode" value="true"/>
+      <remap from="map_fusion_out" to="/coxgraph/map_fusion_in"/>
     </node>
 
   </group>

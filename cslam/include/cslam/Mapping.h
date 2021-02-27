@@ -76,7 +76,7 @@ public:
     typedef boost::shared_ptr<Viewer> viewptr;
 public:
     //constructor
-    LocalMapping(ccptr pCC, mapptr pMap, dbptr pDB, viewptr pViewer);
+    LocalMapping(ccptr pCC, mapptr pMap, dbptr pDB, const bool bMonocular, viewptr pViewer);
 
     //getter/setter
     void SetCommunicator(commptr pComm) {mpComm = pComm;}
@@ -126,10 +126,13 @@ protected:
     void SearchInNeighbors();
 
     void KeyFrameCullingV3();
+    void KeyFrameCullingClient();
 
     cv::Mat ComputeF12(kfptr &pKF1, kfptr &pKF2);
 
     cv::Mat SkewSymmetricMatrix(const cv::Mat &v);
+
+    bool mbMonocular;
 
     void ResetIfRequested();
     bool mbResetRequested;

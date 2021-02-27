@@ -57,6 +57,8 @@
 // Thirdparty
 #include "thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 
+#include <coxgraph_mod/vio_interface.h>
+
 using namespace std;
 using namespace estd;
 
@@ -187,6 +189,8 @@ class ClientHandler : public boost::enable_shared_from_this<ClientHandler> {
 
   cv::Mat mM1l,mM2l,mM1r,mM2r;
   bool mbDoRectify;
+
+  coxgraph::mod::VIOInterface vio_interface_;
 };
 
 }  // namespace cslam

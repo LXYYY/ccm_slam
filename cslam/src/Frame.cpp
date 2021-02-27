@@ -196,7 +196,15 @@ Frame::Frame(const cv::Mat& imLeft, const cv::Mat& imRight,
              const double& timeStamp, extractorptr extractorLeft,
              extractorptr extractorRight, vocptr voc, cv::Mat& K,
              cv::Mat& distCoef, const float& bf, const float& thDepth,
-             size_t ClientId) {
+             size_t ClientId)
+    : mpORBextractor(extractorLeft),
+      mpORBextractorRight(extractorRight),
+      mpORBvocabulary(voc),
+      mTimeStamp(timeStamp),
+      mK(K.clone()),
+      mDistCoef(distCoef.clone()),
+      mbf(bf),
+      mThDepth(thDepth) {
   // Frame ID
   mId = make_pair(nNextId++, ClientId);
 

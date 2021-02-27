@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<launch>
+        <arg name="dist" default="0" />
+        <arg name="id" default="0" />
+        <arg name="vehicle_no" default="109" />
+        <arg name="cam" default="$(find ccmslam)/conf/caminfo_carla.yaml" />
+
+        <arg name="rgb_topic" default="/carla/$(arg vehicle_no)/camera/rgb/front/image_color" />
+        <arg name="depth_topic" default="/carla/$(arg vehicle_no)/camera/depth/front/image_depth" />
+
+        <group ns="ccmslam">
+                <arg name="debug_client" default="false" />
+                <arg unless="$(arg debug_client)" name="launch_prefix_client" value=" " />
+                <arg if="$(arg debug_client)" name="launch_prefix_client" value="xterm -e gdb --args" />
+
+                <node pkg="ccmslam" type="ccmslamClientNode" name="ccmslamClientNode0" args="$(find ccmslam)/conf/ORBvoc.txt $(arg cam)" output="screen" launch-prefix="$(arg launch_prefix_client)">
+
+                        <!-- ++++++++++++++++++++++++++++++++++++++++++++++ -->
+                        <!-- Agent Specific Params - !!!MUST BE ADJUSTED!!! -->
+
+                        <param name="~Sensor" type="string" value="RGBD" />
+                        <param name="~FrameId" type="string" value="odom_$(arg id)" />
+                        <param name="~ClientId" type="int" value="0" />
+
+                        <param name="~odom_frame" type="string" value="odom_$(arg id)" />
+                        <param name="~sensor_frame" type="string" value="cam0_$(arg id)" />
+                        <param name="~TopicNameCamSub" type="string" value="$(arg rgb_topic)" />
+                        <param name="~DepthTopicName" type="string" value="$(arg depth_topic)" />
+
+                        <param name="~MapInTopicName" type="string" value="MapOutServer0" unless="$(arg dist)" />
+                        <param name="~MapInTopicName" type="string" value="MapOutServer0Disturbed" if="$(arg dist)" />
+
+                </node>
+        </group>
+
+</launch>

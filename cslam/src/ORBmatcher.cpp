@@ -417,7 +417,7 @@ int ORBmatcher::SearchByProjection(kfptr pKF, cv::Mat Scw, const vector<mpptr> &
         }
 
         if(bestDist<=TH_LOW)
-        {
+        { 
             //check if pKF already know this MP, but another, better matching descriptor was found
             int existing_idx = pMP->GetIndexInKeyFrame(pKF);
             if(existing_idx != -1)
@@ -445,7 +445,7 @@ int ORBmatcher::SearchByProjection(kfptr pKF, cv::Mat Scw, const vector<mpptr> &
                 //not observed -- everything alright :-)
                 vpMatched[bestIdx]=pMP;
                 nmatches++;
-            }
+        }
         }
     }
 
@@ -705,7 +705,7 @@ int ORBmatcher::SearchByBoW(kfptr pKF1, kfptr pKF2, vector<mpptr> &vpMatches12) 
 }
 
 int ORBmatcher::SearchForTriangulation(kfptr pKF1, kfptr pKF2, cv::Mat F12,
-                                       vector<pair<size_t, size_t> > &vMatchedPairs)
+                                       vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo)
 {
 
     const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
@@ -753,6 +753,12 @@ int ORBmatcher::SearchForTriangulation(kfptr pKF1, kfptr pKF2, cv::Mat F12,
                 if(pMP1)
                     continue;
 
+                const bool bStereo1 = pKF1->mvuRight[idx1]>=0;
+
+                if(bOnlyStereo)
+                    if(!bStereo1)
+                        continue;
+                
                 const cv::KeyPoint &kp1 = pKF1->mvKeysUn[idx1];
 
                 const cv::Mat &d1 = pKF1->mDescriptors.row(idx1);
@@ -770,6 +776,12 @@ int ORBmatcher::SearchForTriangulation(kfptr pKF1, kfptr pKF2, cv::Mat F12,
                     if(vbMatched2[idx2] || pMP2)
                         continue;
 
+                    const bool bStereo2 = pKF2->mvuRight[idx2]>=0;
+
+                    if(bOnlyStereo)
+                        if(!bStereo2)
+                            continue;
+                    
                     const cv::Mat &d2 = pKF2->mDescriptors.row(idx2);
 
                     const int dist = DescriptorDistance(d1,d2);
@@ -779,10 +791,13 @@ int ORBmatcher::SearchForTriangulation(kfptr pKF1, kfptr pKF2, cv::Mat F12,
 
                     const cv::KeyPoint &kp2 = pKF2->mvKeysUn[idx2];
 
+                    if(!bStereo1 && !bStereo2)
+                    {
                     const float distex = ex-kp2.pt.x;
                     const float distey = ey-kp2.pt.y;
                     if(distex*distex+distey*distey<100*pKF2->mvScaleFactors[kp2.octave])
                         continue;
+                    }
 
                     if(CheckDistEpipolarLine(kp1,kp2,F12,pKF2))
                     {
@@ -867,6 +882,7 @@ int ORBmatcher::Fuse(kfptr pKF, const vector<mpptr> &vpMapPoints, const float th
     const float &fy = pKF->fy;
     const float &cx = pKF->cx;
     const float &cy = pKF->cy;
+    const float &bf = pKF->mbf;
 
     cv::Mat Ow = pKF->GetCameraCenter();
 
@@ -905,6 +921,7 @@ int ORBmatcher::Fuse(kfptr pKF, const vector<mpptr> &vpMapPoints, const float th
         if(!pKF->IsInImage(u,v))
             continue;
 
+        const float ur = u-bf*invz;
 
         const float maxDistance = pMP->GetMaxDistanceInvariance();
         const float minDistance = pMP->GetMinDistanceInvariance();
@@ -948,6 +965,22 @@ int ORBmatcher::Fuse(kfptr pKF, const vector<mpptr> &vpMapPoints, const float th
             if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                 continue;
 
+            if(pKF->mvuRight[idx]>=0)
+            {
+                // Check reprojection error in stereo
+                const float &kpx = kp.pt.x;
+                const float &kpy = kp.pt.y;
+                const float &kpr = pKF->mvuRight[idx];
+                const float ex = u-kpx;
+                const float ey = v-kpy;
+                const float er = ur-kpr;
+                const float e2 = ex*ex+ey*ey+er*er;
+
+                if(e2*pKF->mvInvLevelSigma2[kpLevel]>7.8)
+                    continue;
+            }
+            else
+            {
             const float &kpx = kp.pt.x;
             const float &kpy = kp.pt.y;
             const float ex = u-kpx;
@@ -956,6 +989,7 @@ int ORBmatcher::Fuse(kfptr pKF, const vector<mpptr> &vpMapPoints, const float th
 
             if(e2*pKF->mvInvLevelSigma2[kpLevel]>5.99)
                 continue;
+            }
 
             const cv::Mat &dKF = pKF->mDescriptors.row(idx);
 
@@ -1416,7 +1450,7 @@ int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
                 else if(bBackward)
                     vIndices2 = CurrentFrame.GetFeaturesInArea(u,v, radius, 0, nLastOctave);
                 else
-                vIndices2 = CurrentFrame.GetFeaturesInArea(u,v, radius, nLastOctave-1, nLastOctave+1);
+                    vIndices2 = CurrentFrame.GetFeaturesInArea(u,v, radius, nLastOctave-1, nLastOctave+1);
 
                 if(vIndices2.empty())
                     continue;
@@ -1691,4 +1725,4 @@ int ORBmatcher::DescriptorDistance(const cv::Mat &a, const cv::Mat &b)
     return dist;
 }
 
-} //end ns
+} //namespace ORB_SLAM

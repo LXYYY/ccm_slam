@@ -46,7 +46,8 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
       mpViewer(pViewer),
       mbReset(false),
       mbLoadedMap(bLoadMap),
-      mbDoRectify(true) {
+      mbDoRectify(true),
+      vio_interface_(Nh, NhPrivate) {
   if (mpVoc == nullptr || mpKFDB == nullptr || mpMap == nullptr ||
       (mpUID == nullptr && mSysState == eSystemState::SERVER)) {
     cout << ("In \" ClientHandler::ClientHandler(...)\": nullptr exception")
@@ -88,7 +89,7 @@ ClientHandler::ClientHandler(ros::NodeHandle Nh, ros::NodeHandle NhPrivate,
           boost::bind(&ClientHandler::RGBDImgCb, this, _1, _2));
 
     } else if (mSensor == eSensor::STEREO) {
-      mbDoRectify = mNhPrivate.param("do_rectify", mbDoRectify, mbDoRectify);
+      mNhPrivate.param("do_rectify", mbDoRectify, mbDoRectify);
       if (mbDoRectify) {
         // Load settings related to stereo calibration
         cv::FileStorage fsSettings(mstrCamFile, cv::FileStorage::READ);
@@ -246,7 +247,8 @@ void ClientHandler::InitializeClient() {
   mpViewer.reset(new Viewer(mpMap, mpCC));
   usleep(10000);
   //+++++ Initialize the Local Mapping thread +++++
-  mpMapping.reset(new LocalMapping(mpCC, mpMap, mpKFDB, mpViewer));
+  mpMapping.reset(new LocalMapping(mpCC, mpMap, mpKFDB,
+                                   mSensor == eSensor::MONOCULAR, mpViewer));
   usleep(10000);
   //    +++++ Initialize the communication thread +++++
   mpComm.reset(new Communicator(mpCC, mpVoc, mpMap, mpKFDB));
@@ -283,7 +285,8 @@ void ClientHandler::InitializeServer(bool bLoadMap) {
   mptLoopClosure.reset(new thread(&LoopFinder::Run, mpLoopFinder));
   usleep(10000);
   //+++++ Initialize the Local Mapping thread +++++
-  mpMapping.reset(new LocalMapping(mpCC, mpMap, mpKFDB, mpViewer));
+  mpMapping.reset(new LocalMapping(mpCC, mpMap, mpKFDB,
+                                   mSensor == eSensor::MONOCULAR, mpViewer));
   mpMapping->SetLoopFinder(mpLoopFinder);  // tempout
   usleep(10000);
   //+++++ Initialize the communication thread +++++
@@ -413,8 +416,10 @@ void ClientHandler::RGBDImgCb(const sensor_msgs::ImageConstPtr& msgRGB,
     }
   }
 
-  mpTracking->GrabImageRGBD(cv_ptrRGB->image, cv_ptrD->image,
-                            cv_ptrRGB->header.stamp.toSec());
+  vio_interface_.updatePose(
+      mpTracking->GrabImageRGBD(cv_ptrRGB->image, cv_ptrD->image,
+                                cv_ptrRGB->header.stamp.toSec()),
+      cv_ptrRGB->header.stamp.toSec());
 }
 
 void ClientHandler::StereoImgCb(const sensor_msgs::ImageConstPtr& msgLeft,
@@ -442,6 +447,7 @@ void ClientHandler::StereoImgCb(const sensor_msgs::ImageConstPtr& msgLeft,
     cv::remap(cv_ptrRight->image, imRight, mM1r, mM2r, cv::INTER_LINEAR);
     mpTracking->GrabImageStereo(imLeft, imRight,
                                 cv_ptrLeft->header.stamp.toSec());
+
   } else {
     mpTracking->GrabImageStereo(cv_ptrLeft->image, cv_ptrRight->image,
                                 cv_ptrLeft->header.stamp.toSec());
