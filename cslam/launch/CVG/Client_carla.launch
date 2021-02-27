@@ -1,13 +1,12 @@
 <?xml version="1.0"?>
 <launch>
-        <param name="use_sim_time" value="true" />
         <arg name="dist" default="0" />
         <arg name="id" default="0" />
         <arg name="vehicle_no" default="109" />
         <arg name="cam" default="$(find ccmslam)/conf/caminfo_carla.yaml" />
 
-        <arg name="rgb_topic" default="/carla/vehicle/$(arg vehicle_no)/camera/rgb/front/image_color" />
-        <arg name="depth_topic" default="/carla/vehicle/$(arg vehicle_no)/camera/depth/front/image_depth" />
+        <arg name="rgb_topic" default="/carla/$(arg vehicle_no)/camera/rgb/front/image_color" />
+        <arg name="depth_topic" default="/carla/$(arg vehicle_no)/camera/depth/front/image_depth" />
 
         <group ns="ccmslam">
                 <arg name="debug_client" default="false" />

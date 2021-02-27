@@ -23,7 +23,7 @@ Camera.fps: 30.0
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 1
 
-Baseline: 20
+Baseline: 40
 ThDepth: 40
 DepthFactor: 1
 
